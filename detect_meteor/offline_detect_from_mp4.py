@@ -69,7 +69,7 @@ def read_one_video(full_path):
                 print("process speed, {0} frames per sec".format(int((cnt - last_cnt)/(t2-t1))))
                 last_cnt = cnt
                 t1 = t2
-            print("frame count: ", cnt)
+            print("frame count: ", cnt, '  total: ', frame_count)
         if ret == True:
             match = 0
             m_img = mask_img(frame, width, height)
@@ -296,6 +296,7 @@ def calc_split_range(index, frame_count, fps, time_sec):
     return param_list
         
 def process_one_video(full_path):
+    print("processing video, ", full_path)
     ret = read_one_video(full_path)
     index, frame_count, fps, time_sec = ret
     param_list = calc_split_range(index, frame_count, fps, time_sec)
