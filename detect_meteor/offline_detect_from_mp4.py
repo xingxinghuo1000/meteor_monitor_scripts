@@ -167,6 +167,10 @@ def test_get_record_time():
     assert '2022-05-14 06:03:57' == t.strftime("%Y-%m-%d %H:%M:%S")
 
 def test_get_segments():
+    index = []
+    segments = get_segments_from_index(index)
+    assert segments == []
+
     index = [31]
     segments = get_segments_from_index(index)
     assert segments == [[31, 31]]
@@ -210,6 +214,8 @@ def get_segments_from_index(index):
     return segments
 
 def test_merge_segments():
+    segments = []
+    assert [] == merge_segments(segments, 25)
     segments = [[31, 35], [80, 81]]
     assert [[31, 81]] == merge_segments(segments, 25)
     segments = [[1000, 1080], [1300, 1301], [1303, 1320]]
@@ -225,6 +231,8 @@ def merge_segments(segments, fps):
     last_begin = -1
     last_end = -1
     out_segments = []
+    if len(segments) == 0:
+        return out_segments
     # if distance between 2 segments is too near, then merge them
     for i in range(len(segments)):
         seg = segments[i]
