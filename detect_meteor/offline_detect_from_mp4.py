@@ -1,11 +1,15 @@
 import cv2
+import sys
 import os
+import shutil
 import time
 import datetime
 import pandas as pd
 import traceback
 import threading
 import queue
+
+EXECUTOR_NUM = 4
 
 DEBUG = 0
 split_limit = 600
@@ -14,6 +18,7 @@ thres1 = 20
 prefix_video_sec = 1.0 # when cut video, keep 1 seconds before meteor
 base_output_path = r'W:\meteor_monitor\meteor_store'
 input_file_base_path = r'W:\meteor_monitor\origin'
+queue_obj = queue.Queue()
 
 def decode_fourcc(cc):
     return "".join([chr((int(cc) >> 8 * i) & 0xFF) for i in range(4)])
@@ -34,76 +39,69 @@ def convert_img(frame):
     #cv2.imshow('Frame',gray_lwpCV)
     return gray_lwpCV, resized
 
-def read_frames(queue, full_path):
-
-    vid_capture = cv2.VideoCapture(full_path)
-    while vid_capture.isOpened():
+def read_one_frame(vid_capture):
+    if not vid_capture.isOpened():
+        return False, None
+    else:
         ret, frame = vid_capture.read()
-        if ret == False:
-            break
-        queue.put((True, frame))
-    # put finish signal. then when processing
-    # if process function get this signal, it will return or break loop
-    queue.put((False, None))
-    vid_capture.release()
+        return ret, frame
 
-def process_frames(queue, index, width, height, frame_count):
-    cnt = 0
-    
-    background = None
-    t1  = time.time()
-    last_cnt = 0
-    while 1:
-        ret, frame = queue.get()
-        # got Finish signal, then break
-        if ret == False:
-            break
-        if cnt == 0:
-            cv2.imwrite("1.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
-        if cnt %50 == 0:
-            if cnt > 100:
-                t2 = time.time()
-                print("process speed, {0} frames per sec".format(int((cnt - last_cnt)/(t2-t1))))
-                last_cnt = cnt
-                t1 = t2
-            print("frame count: ", cnt, '  total: ', frame_count)
-        match = 0
-        m_img = mask_img(frame, width, height)
-        #cv2.imshow("masked_image", m_img)
-        # get background image, every 600 frames
-        gray_lwpCV, resized_frame = convert_img(m_img)
-        if cnt % split_limit == 0:
-            print("set background")
-            background=gray_lwpCV
-        else:
-            diff = cv2.absdiff(background, gray_lwpCV)
-            #cv2.imshow("background", background)
-            #cv2.imshow("gray_lwpCV", gray_lwpCV)
-            #cv2.imshow("diff", diff)
-            diff = cv2.threshold(diff, thres1, 255, cv2.THRESH_BINARY)[1]
-            ret,thresh = cv2.threshold(diff.copy(),150,255,0)
-            #print("thresh: ", thresh)
-            contours, hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-            #contours, hierarchy = cv2.findContours(diff.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for c in contours:
-                if cv2.contourArea(c) < area_threh :
-                    continue
-                else:
-                    (x, y, w, h) = cv2.boundingRect(c)
-                    cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                    #cv2.imshow("rectangle", frame)
-                    #print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
-                    match = 1
-                    index.append(cnt)
-        if DEBUG:
-            cv2.imshow("frame: ", resized_frame)
-        if DEBUG:
-            key = cv2.waitKey(50)
-            if key == ord('q'):
-                break
+def process_one_frame(data_obj):
 
-        cnt += 1
-    print("index: ", index)
+    width = data_obj["width"]
+    height = data_obj["height"]
+    frame_count = data_obj["frame_count"]
+    last_cnt = data_obj["last_cnt"]
+    background = data_obj["background"]
+    cnt = data_obj['frame_idx']
+    ret = data_obj["ret"]
+    frame = data_obj["frame"]
+    # got Finish signal, then break
+    if ret == False:
+        return
+    if cnt == 0:
+        cv2.imwrite("1.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
+    if cnt %200 == 0:
+        if cnt > 100:
+            t2 = time.time()
+            print("process speed, {0} frames per sec".format(int((cnt - last_cnt)/(t2-data_obj['t1']))))
+            data_obj["last_cnt"] = cnt
+            data_obj['t1'] = t2
+        print("frame count: ", cnt, '  total: ', frame_count)
+    match = 0
+    m_img = mask_img(frame, width, height)
+    #cv2.imshow("masked_image", m_img)
+    # get background image, every 600 frames
+    gray_lwpCV, resized_frame = convert_img(m_img)
+    if cnt % split_limit == 0:
+        print("set background")
+        data_obj['background']=gray_lwpCV
+    else:
+        diff = cv2.absdiff(background, gray_lwpCV)
+        #cv2.imshow("background", background)
+        #cv2.imshow("gray_lwpCV", gray_lwpCV)
+        #cv2.imshow("diff", diff)
+        diff = cv2.threshold(diff, thres1, 255, cv2.THRESH_BINARY)[1]
+        ret,thresh = cv2.threshold(diff.copy(),150,255,0)
+        #print("thresh: ", thresh)
+        contours, hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        #contours, hierarchy = cv2.findContours(diff.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for c in contours:
+            if cv2.contourArea(c) < area_threh :
+                continue
+            else:
+                (x, y, w, h) = cv2.boundingRect(c)
+                cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                #cv2.imshow("rectangle", frame)
+                #print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
+                match = 1
+                data_obj['index'].append(cnt)
+    if DEBUG:
+        cv2.imshow("frame: ", resized_frame)
+    if DEBUG:
+        key = cv2.waitKey(50)
+
+    data_obj["frame_idx"] += 1
 
 def read_one_video(full_path):
 
@@ -124,18 +122,27 @@ def read_one_video(full_path):
     print('Frame count : ', frame_count)
     time_sec = frame_count / fps
     print("time total seconds: ", time_sec)
-    vid_capture.release()
     index = []
-    q = queue.Queue(maxsize=10)
-    t1 = threading.Thread(target = read_frames, args=(q,full_path))
-    t1.setDaemon(True)
-    t1.start()
-    t2 = threading.Thread(target = process_frames, args=(q, index, width, height, frame_count))
-    t2.setDaemon(True)
-    t2.start()
-    t1.join()
-    t2.join()
+    data_obj = {
+        "frame_idx": 0,
+        "index": index,
+        "width": width,
+        "height": height,
+        "frame_count": frame_count,
+        "background": None,
+        "last_cnt": 0,
+        "t1": time.time(),
+    }
+    while 1:
+        ret, frame = read_one_frame(vid_capture)
+        data_obj["ret"] = ret
+        data_obj['frame'] = frame
+        if ret == False:
+            break
+        process_one_frame(data_obj)
 
+    vid_capture.release()
+    print("index: ", index)
     return index, frame_count, fps, time_sec
 
 def seconds_to_hum_readable(secs):
@@ -337,24 +344,71 @@ def run_it():
     #read_one_video("meteor-20211229.mp4")
     #read_one_video("meteor-20211231.mp4")
 
-def main():
-    #run_it()
-    video_list = os.listdir(input_file_base_path)
-    video_list.sort()
-    for video_file in video_list:
-        if video_file.endswith(".mp4"):
-            full_path = os.path.join(input_file_base_path, video_file)
-            done_file = os.path.join(input_file_base_path, video_file + '.done')
-            if os.path.exists(done_file):
-                process_one_video(full_path)
+
+def process_from_queue(q):
+    while 1:
+        full_path = q.get()
+        if full_path == "poison":
+            # this is poison, then exit
+            print("thread got poison, then exit")
+            break
+        else:
+            if os.path.exists(full_path):
+                #process_one_video(full_path)
+                cmd = r'''python offline_detect_from_mp4.py --video_file="{0}" 2>&1 '''.format(full_path)
+                print("run cmd: ", cmd)
+                text = os.popen(cmd).read()
+                print("process ret: ", text)
+                done_file = full_path + ".done"
                 try:
                     os.remove(done_file)
                     os.remove(full_path)
                 except:
                     traceback.print_exc()
-                    
+
+
+def batch_process():
+    #run batch
+    print("start one batch process")
+    video_list = os.listdir(input_file_base_path)
+    video_list.sort()
+    # first start processor threads
+    threads = []
+    for i in range(EXECUTOR_NUM):
+        t = threading.Thread(target=process_from_queue, args=(queue_obj,))
+        t.setDaemon(True)
+        t.start()
+        threads.append(t)
+    # get video list,  put them to queue
+    for video_file in video_list:
+        if video_file.endswith(".mp4"):
+            full_path = os.path.join(input_file_base_path, video_file)
+            done_file = os.path.join(input_file_base_path, video_file + '.done')
+            if os.path.exists(done_file):
+                queue_obj.put(full_path)
+    # generate poison for each thread
+    for i in range(EXECUTOR_NUM):
+        queue_obj.put("poison")
+    # wait thread to exit
+    for t in threads:
+        t.join()
+    print("all thread exited")
+                                    
 
 
 if __name__ == "__main__":
-    main()
+    for arg in sys.argv:
+        if '--video_file=' in arg:
+            print("process single video file")
+            full_path = arg.split("--video_file=")[1]
+            if full_path.startswith('"'):
+                full_path = full_path.strip('"')
+            assert os.path.exists(full_path)
+            print("full_path: ", full_path)
+            process_one_video(full_path)
+            sys.exit(0)
+    while 1:
+        batch_process()
+        print("sleep 60")
+        time.sleep(60)
 
