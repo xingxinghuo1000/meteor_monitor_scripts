@@ -4,6 +4,8 @@ import time
 import datetime
 import pandas as pd
 import traceback
+import threading
+import queue
 
 DEBUG = 0
 split_limit = 600
@@ -32,6 +34,76 @@ def convert_img(frame):
     #cv2.imshow('Frame',gray_lwpCV)
     return gray_lwpCV, resized
 
+def read_frames(queue, full_path):
+
+    vid_capture = cv2.VideoCapture(full_path)
+    while vid_capture.isOpened():
+        ret, frame = vid_capture.read()
+        if ret == False:
+            break
+        queue.put((True, frame))
+    # put finish signal. then when processing
+    # if process function get this signal, it will return or break loop
+    queue.put((False, None))
+    vid_capture.release()
+
+def process_frames(queue, index, width, height, frame_count):
+    cnt = 0
+    
+    background = None
+    t1  = time.time()
+    last_cnt = 0
+    while 1:
+        ret, frame = queue.get()
+        # got Finish signal, then break
+        if ret == False:
+            break
+        if cnt == 0:
+            cv2.imwrite("1.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
+        if cnt %50 == 0:
+            if cnt > 100:
+                t2 = time.time()
+                print("process speed, {0} frames per sec".format(int((cnt - last_cnt)/(t2-t1))))
+                last_cnt = cnt
+                t1 = t2
+            print("frame count: ", cnt, '  total: ', frame_count)
+        match = 0
+        m_img = mask_img(frame, width, height)
+        #cv2.imshow("masked_image", m_img)
+        # get background image, every 600 frames
+        gray_lwpCV, resized_frame = convert_img(m_img)
+        if cnt % split_limit == 0:
+            print("set background")
+            background=gray_lwpCV
+        else:
+            diff = cv2.absdiff(background, gray_lwpCV)
+            #cv2.imshow("background", background)
+            #cv2.imshow("gray_lwpCV", gray_lwpCV)
+            #cv2.imshow("diff", diff)
+            diff = cv2.threshold(diff, thres1, 255, cv2.THRESH_BINARY)[1]
+            ret,thresh = cv2.threshold(diff.copy(),150,255,0)
+            #print("thresh: ", thresh)
+            contours, hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+            #contours, hierarchy = cv2.findContours(diff.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for c in contours:
+                if cv2.contourArea(c) < area_threh :
+                    continue
+                else:
+                    (x, y, w, h) = cv2.boundingRect(c)
+                    cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                    #cv2.imshow("rectangle", frame)
+                    #print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
+                    match = 1
+                    index.append(cnt)
+        if DEBUG:
+            cv2.imshow("frame: ", resized_frame)
+        if DEBUG:
+            key = cv2.waitKey(50)
+            if key == ord('q'):
+                break
+
+        cnt += 1
+    print("index: ", index)
 
 def read_one_video(full_path):
 
@@ -52,66 +124,18 @@ def read_one_video(full_path):
     print('Frame count : ', frame_count)
     time_sec = frame_count / fps
     print("time total seconds: ", time_sec)
-    cnt = 0
-    
-    index = []
-    images = []
-    background = None
-    t1  = time.time()
-    last_cnt = 0
-    while(vid_capture.isOpened()):
-        ret, frame = vid_capture.read()
-        if cnt == 0:
-            cv2.imwrite("1.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
-        if cnt %50 == 0:
-            if cnt > 100:
-                t2 = time.time()
-                print("process speed, {0} frames per sec".format(int((cnt - last_cnt)/(t2-t1))))
-                last_cnt = cnt
-                t1 = t2
-            print("frame count: ", cnt, '  total: ', frame_count)
-        if ret == True:
-            match = 0
-            m_img = mask_img(frame, width, height)
-            #cv2.imshow("masked_image", m_img)
-            # get background image, every 600 frames
-            gray_lwpCV, resized_frame = convert_img(m_img)
-            if cnt % split_limit == 0:
-                print("set background")
-                background=gray_lwpCV
-            else:
-                diff = cv2.absdiff(background, gray_lwpCV)
-                #cv2.imshow("background", background)
-                #cv2.imshow("gray_lwpCV", gray_lwpCV)
-                #cv2.imshow("diff", diff)
-                diff = cv2.threshold(diff, thres1, 255, cv2.THRESH_BINARY)[1]
-                ret,thresh = cv2.threshold(diff.copy(),150,255,0)
-                #print("thresh: ", thresh)
-                contours, hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-                #contours, hierarchy = cv2.findContours(diff.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                for c in contours:
-                    if cv2.contourArea(c) < area_threh :
-                        continue
-                    else:
-                        (x, y, w, h) = cv2.boundingRect(c)
-                        cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                        #cv2.imshow("rectangle", frame)
-                        #print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
-                        match = 1
-                        index.append(cnt)
-            if DEBUG:
-                cv2.imshow("frame: ", resized_frame)
-            if DEBUG:
-                key = cv2.waitKey(50)
-                if key == ord('q'):
-                    break
-
-        else:
-            # read end, then break
-            break
-        cnt += 1
     vid_capture.release()
-    print("index: ", index)
+    index = []
+    q = queue.Queue(maxsize=10)
+    t1 = threading.Thread(target = read_frames, args=(q,full_path))
+    t1.setDaemon(True)
+    t1.start()
+    t2 = threading.Thread(target = process_frames, args=(q, index, width, height, frame_count))
+    t2.setDaemon(True)
+    t2.start()
+    t1.join()
+    t2.join()
+
     return index, frame_count, fps, time_sec
 
 def seconds_to_hum_readable(secs):
