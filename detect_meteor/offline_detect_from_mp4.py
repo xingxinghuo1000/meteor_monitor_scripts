@@ -187,7 +187,7 @@ def gen_ffmpg_split_cmd(start_time, end_time, input_file, base_path):
     out_full_path = os.path.join(out_dir, out_file)
     if os.path.exists(out_full_path):
         os.remove(out_full_path)
-    cmd = 'ffmpeg -ss "{0}" -t "{1}" -i "{2}" -vcodec copy -acodec copy "{3}"'.format(
+    cmd = 'ffmpeg -ss "{0}" -t "{1}" -i "{2}" -vcodec copy -acodec copy "{3}" 2>&1 '.format(
             start_time, end_time, input_file, out_full_path)
     return cmd
 
