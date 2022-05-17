@@ -26,6 +26,26 @@ PROCESS_END_TIME = '2200'
 def decode_fourcc(cc):
     return "".join([chr((int(cc) >> 8 * i) & 0xFF) for i in range(4)])
 
+def parse_config():
+    global EXECUTOR_NUM, PROCESS_START_TIME, PROCESS_END_TIME
+    if os.path.exists(".config"):
+        f1 = open(".config")
+        text = f1.read()
+        f1.close()
+    for line in text.split("\n"):
+        if line.startswith("#"):
+            continue
+        if 'EXECUTOR_NUM' in line:
+            EXECUTOR_NUM = int(line.split("=")[1].strip())
+            print("resolve PARAM, EXECUTOR_NUM: ", EXECUTOR_NUM)
+        if 'PROCESS_START_TIME' in line:
+            PROCESS_START_TIME = line.split("=")[1].strip('"')
+            print("resolve PARAM, PROCESS_START_TIME: ", PROCESS_START_TIME)
+        if 'PROCESS_END_TIME' in line:
+            PROCESS_END_TIME = line.split("=")[1].strip('"')
+            print("resolve PARAM, PROCESS_END_TIME: ", PROCESS_END_TIME)
+
+
 def mask_img(img, w, h):
     mask_file = 'mask-1280-720.bmp'
     if not os.path.exists(mask_file):
@@ -516,6 +536,7 @@ def test_should_process():
 
 if __name__ == "__main__":
     assert True == check_ffmpeg()
+    parse_config()
     for arg in sys.argv:
         if '--video_file=' in arg:
             print("process single video file")
