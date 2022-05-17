@@ -8,6 +8,7 @@ import pandas as pd
 import traceback
 import threading
 import queue
+import uuid
 
 EXECUTOR_NUM = 4
 
@@ -19,13 +20,16 @@ prefix_video_sec = 1.0 # when cut video, keep 1 seconds before meteor
 base_output_path = r'W:\meteor_monitor\meteor_store'
 input_file_base_path = r'W:\meteor_monitor\origin'
 queue_obj = queue.Queue()
+LOCK_STR = str(uuid.uuid4())
 
 def decode_fourcc(cc):
     return "".join([chr((int(cc) >> 8 * i) & 0xFF) for i in range(4)])
 
 def mask_img(img, w, h):
-    mask_720 = 'mask-1280-720.bmp'
-    img_mask = cv2.imread(mask_720)
+    mask_file = 'mask-1280-720.bmp'
+    if not os.path.exists(mask_file):
+        return img
+    img_mask = cv2.imread(mask_file)
     if w != 1280:
         img_mask = cv2.resize(img_mask, (w,h))
     ret_img = cv2.bitwise_and(img, img_mask)
@@ -353,25 +357,57 @@ def process_from_queue(q):
             print("thread got poison, then exit")
             break
         else:
-            if os.path.exists(full_path):
-                #process_one_video(full_path)
-                cmd = r'''python offline_detect_from_mp4.py --video_file="{0}" 2>&1 '''.format(full_path)
-                print("run cmd: ", cmd)
-                text = os.popen(cmd).read()
-                print("process ret: ", text)
-                done_file = full_path + ".done"
-                try:
-                    os.remove(done_file)
-                    os.remove(full_path)
-                except:
-                    traceback.print_exc()
+            if not os.path.exists(full_path):
+                print("file not exists, full_path: ", full_path)
+                continue
+            if os.path.exists(full_path + '.lock'):
+                print("lock file alreay exists, then return. full_path: ", full_path)
+                continue
+            if os.path.exists(full_path + '.analyze'):
+                print("analyze file already exists, then return, full_path: ", full_path)
+                continue
+            lock_flag = try_lock_file(full_path)
+            if lock_flag == False:
+                print("lock file failed, then return, full_path: ", full_path)
+                continue
+            #process_one_video(full_path)
+            cmd = r'''python offline_detect_from_mp4.py --video_file="{0}" 2>&1 '''.format(full_path)
+            print("run cmd: ", cmd)
+            text = os.popen(cmd).read()
+            print("process ret: ", text)
+            # write analyze file, and remove lock file
+            try:
+                print("try to create .analyze file")
+                with open(full_path + '.analyze', 'w') as f2:
+                    f2.write(" ")
+                print("try to remove lock file")
+                if os.path.exists(full_path + '.lock'):
+                    os.remove(full_path + '.lock')
+            except:
+                traceback.print_exc()
 
 
 def batch_process():
     #run batch
     print("start one batch process")
     video_list = os.listdir(input_file_base_path)
+    video_list = [x for x in video_list if x.endswith(".mp4")]
+    if len(video_list) == 0:
+        print("video list is empty, then return")
+        return
     video_list.sort()
+    video_list = [x for x in video_list if not os.path.exists(os.path.join(input_file_base_path, x + '.analyze'))]
+    if len(video_list) == 0:
+        print("video list is empty after analyze filter, then return")
+        return
+    video_list = [x for x in video_list if os.path.exists(os.path.join(input_file_base_path, x + '.done'))]
+    if len(video_list) == 0:
+        print("video list is empty after done filter, then return")
+        return
+    # one batch process 10 files
+    if len(video_list) > 30:
+        video_list = video_list[:30]
+    print("found video list: ", video_list)
     # first start processor threads
     threads = []
     for i in range(EXECUTOR_NUM):
@@ -381,11 +417,9 @@ def batch_process():
         threads.append(t)
     # get video list,  put them to queue
     for video_file in video_list:
-        if video_file.endswith(".mp4"):
-            full_path = os.path.join(input_file_base_path, video_file)
-            done_file = os.path.join(input_file_base_path, video_file + '.done')
-            if os.path.exists(done_file):
-                queue_obj.put(full_path)
+        full_path = os.path.join(input_file_base_path, video_file)
+        done_file = os.path.join(input_file_base_path, video_file + '.done')
+        queue_obj.put(full_path)
     # generate poison for each thread
     for i in range(EXECUTOR_NUM):
         queue_obj.put("poison")
@@ -394,6 +428,51 @@ def batch_process():
         t.join()
     print("all thread exited")
                                     
+
+def try_lock_file(full_path):
+    lockfile = full_path + ".lock"
+    if os.path.exists(lockfile):
+        return False
+    else:
+        try:
+            with open(lockfile, 'w') as f1:
+                f1.write(LOCK_STR)
+        except:
+            return False
+        if not os.path.exists(lockfile):
+            # write failed, maybe file path can not be written, return False
+            return False
+        else:
+            str_read = ""
+            try:
+                with open(lockfile, 'r') as f2:
+                    str_read = f2.read().strip("\r\n").strip()
+            except:
+                return False
+            if str_read != LOCK_STR:
+                # may be written again be other process or other machine
+                return False
+            else:
+                # !!!!!! SUCCESS lock this file
+                return True
+
+def test_lock():
+    # test 1
+    if os.path.exists("1.txt.lock"):
+        os.remove('1.txt.lock')
+    full_path = "1.txt"
+    assert True == try_lock_file("1.txt")
+    if os.path.exists("1.txt.lock"):
+        os.remove("1.txt.lock")
+    # test 2
+    if os.path.exists("2.txt.lock"):
+        os.remove('2.txt.lock')
+    f2 = open("2.txt.lock", 'w')
+    f2.write("1123123")
+    f2.close()
+    assert False == try_lock_file("2.txt")
+    if os.path.exists("2.txt.lock"):
+        os.remove("2.txt.lock")
 
 
 if __name__ == "__main__":
@@ -408,7 +487,11 @@ if __name__ == "__main__":
             process_one_video(full_path)
             sys.exit(0)
     while 1:
-        batch_process()
+        try:
+            batch_process()
+        except:
+            print("Error when batch_process")
+            traceback.print_exc()
         print("sleep 60")
         time.sleep(60)
 
