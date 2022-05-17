@@ -529,7 +529,7 @@ if __name__ == "__main__":
     while 1:
         n = datetime.datetime.now()
         tstr = n.strftime("%H%M")
-        if should_process_now(n):
+        if should_process_now(tstr):
             try:
                 batch_process()
             except:
