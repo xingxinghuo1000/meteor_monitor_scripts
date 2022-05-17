@@ -21,6 +21,8 @@ base_output_path = r'W:\meteor_monitor\meteor_store'
 input_file_base_path = r'W:\meteor_monitor\origin'
 queue_obj = queue.Queue()
 LOCK_STR = str(uuid.uuid4())
+PROCESS_START_TIME = '0700'
+PROCESS_END_TIME = '2200'
 
 def decode_fourcc(cc):
     return "".join([chr((int(cc) >> 8 * i) & 0xFF) for i in range(4)])
@@ -49,6 +51,17 @@ def read_one_frame(vid_capture):
     else:
         ret, frame = vid_capture.read()
         return ret, frame
+
+def check_ffmpeg():
+    text = os.popen("ffmpeg --help 2>&1").read()
+    #print("ffmpeg output text: ", text)
+    if ' version ' in text and ' Copyright ' in text:
+        return True
+    else:
+        return False
+
+def test_check_ffmpeg():
+    assert True == check_ffmpeg()
 
 def process_one_frame(data_obj):
 
@@ -475,7 +488,35 @@ def test_lock():
         os.remove("2.txt.lock")
 
 
+def should_process_now(tstr):
+    print("current time: ", tstr)
+    if tstr >= '0000' and tstr < PROCESS_START_TIME:
+        print("should process, return False")
+        return False
+    if tstr >= PROCESS_END_TIME and tstr <= '2359':
+        print("should process, return False")
+        return False
+    print("should process, return True")
+    return True
+
+def test_should_process():
+    assert False == should_process_now('0000')
+    assert False == should_process_now('0001')
+    assert False == should_process_now('0500')
+    assert False == should_process_now('0600')
+    assert True == should_process_now('0800')
+    assert True == should_process_now('1200')
+    assert True == should_process_now('1200')
+    assert True == should_process_now('1800')
+    assert True == should_process_now('1900')
+    assert True == should_process_now('2100')
+    assert True == should_process_now('2159')
+    assert False == should_process_now('2200')
+    assert False == should_process_now('2300')
+    assert False == should_process_now('2359')
+
 if __name__ == "__main__":
+    assert True == check_ffmpeg()
     for arg in sys.argv:
         if '--video_file=' in arg:
             print("process single video file")
@@ -487,11 +528,17 @@ if __name__ == "__main__":
             process_one_video(full_path)
             sys.exit(0)
     while 1:
-        try:
-            batch_process()
-        except:
-            print("Error when batch_process")
-            traceback.print_exc()
-        print("sleep 60")
-        time.sleep(60)
+        n = datetime.datetime.now()
+        tstr = n.strftime("%H%M")
+        if should_process_now(n):
+            try:
+                batch_process()
+            except:
+                print("Error when batch_process")
+                traceback.print_exc()
+            print("after process, sleep 60")
+            time.sleep(60)
+        else:
+            print("not now, then sleep 60")
+            time.sleep(60)
 
