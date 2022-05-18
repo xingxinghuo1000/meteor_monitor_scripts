@@ -24,6 +24,7 @@ LOCK_STR = str(uuid.uuid4())
 PROCESS_START_TIME = '0700'
 PROCESS_END_TIME = '2200'
 IP_ADDR = ""
+PYTHON_BIN = "python"
 
 def get_local_ip():
     ip = ""
@@ -44,7 +45,7 @@ def decode_fourcc(cc):
     return "".join([chr((int(cc) >> 8 * i) & 0xFF) for i in range(4)])
 
 def parse_config():
-    global EXECUTOR_NUM, PROCESS_START_TIME, PROCESS_END_TIME
+    global EXECUTOR_NUM, PROCESS_START_TIME, PROCESS_END_TIME, base_output_path, input_file_base_path, PYTHON_BIN
     text = ""
     if os.path.exists(".config"):
         f1 = open(".config")
@@ -57,11 +58,20 @@ def parse_config():
             EXECUTOR_NUM = int(line.split("=")[1].strip())
             print("resolve PARAM, EXECUTOR_NUM: ", EXECUTOR_NUM)
         if 'PROCESS_START_TIME' in line:
-            PROCESS_START_TIME = line.split("=")[1].strip('"')
+            PROCESS_START_TIME = line.split("=")[1].strip(' "')
             print("resolve PARAM, PROCESS_START_TIME: ", PROCESS_START_TIME)
         if 'PROCESS_END_TIME' in line:
-            PROCESS_END_TIME = line.split("=")[1].strip('"')
+            PROCESS_END_TIME = line.split("=")[1].strip(' "')
             print("resolve PARAM, PROCESS_END_TIME: ", PROCESS_END_TIME)
+        if 'base_output_path' in line:
+            base_output_path = line.split("=")[1].strip(' "')
+            print("resolve PARAM, base_output_path: ", base_output_path)
+        if 'input_file_base_path' in line:
+            input_file_base_path = line.split("=")[1].strip(' "')
+            print("resolve PARAM, input_file_base_path: ", input_file_base_path)
+        if 'PYTHON_BIN' in line:
+            PYTHON_BIN = line.split("=")[1].strip(' "')
+            print("resolve PARAM, PYTHON_BIN: ", PYTHON_BIN)
 
 
 def mask_img(img, w, h):
@@ -429,7 +439,7 @@ def process_from_queue(q):
                 print("lock file failed, then return, full_path: ", full_path)
                 continue
             #process_one_video(full_path)
-            cmd = r'''python offline_detect_from_mp4.py --video_file="{0}" 2>&1 '''.format(full_path)
+            cmd = r'''{0} offline_detect_from_mp4.py --video_file="{1}" 2>&1 '''.format(PYTHON_BIN, full_path)
             print("run cmd: ", cmd)
             text = os.popen(cmd).read()
             print("process ret: ", text)
