@@ -123,7 +123,7 @@ def process_one_frame(data_obj):
     # got Finish signal, then break
     if ret == False:
         return
-    if cnt == 0:
+    if cnt == 0 and DEBUG == 1:
         cv2.imwrite("1.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
     if cnt %200 == 0:
         if cnt > 100:
