@@ -251,13 +251,13 @@ def get_record_time_from_video_name(full_path, shift_time):
     
 
 def test_get_record_time():
-    p = r'W:\meteor_monitor\origin\WIN_20220514_04_54_56_Pro.mp4'
+    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
     t = get_record_time_from_video_name(p, '00:00:01')
     assert '2022-05-14 04:54:57' == t.strftime("%Y-%m-%d %H:%M:%S")
-    p = r'W:\meteor_monitor\origin\WIN_20220514_04_54_56_Pro.mp4'
+    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
     t = get_record_time_from_video_name(p, '00:09:01')
     assert '2022-05-14 05:03:57' == t.strftime("%Y-%m-%d %H:%M:%S")
-    p = r'W:\meteor_monitor\origin\WIN_20220514_04_54_56_Pro.mp4'
+    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
     t = get_record_time_from_video_name(p, '01:09:01')
     assert '2022-05-14 06:03:57' == t.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -392,8 +392,11 @@ def calc_split_range(index, frame_count, fps, time_sec):
         
 def process_one_video(full_path):
     print("processing video, ", full_path)
+    t1 = time.time()
     ret = read_one_video(full_path)
+    t2 = time.time()
     index, frame_count, fps, time_sec = ret
+    process_speed = int(frame_count / (t2-t1))
     param_list = calc_split_range(index, frame_count, fps, time_sec)
     if len(param_list) > 0:
         for param in param_list:
@@ -402,10 +405,35 @@ def process_one_video(full_path):
             if DEBUG == 0:
                 text = os.popen(cmd).read()
                 print("cmd ret: ", text)
+    if DEBUG == 0:
+        write_analyze(full_path, IP_ADDR, index, frame_count, t2-t1, time_sec)
 
-    print("try to create .analyze file")
+def write_analyze(full_path, ip, index, frame_count, time_use, video_time_sec):
+    ana_file = full_path + '.analyze'
+    process_speed = int(frame_count/time_use)
+    print("try to create .analyze file, path: ", ana_file)
+    text = r'''IP: {0}
+index:{1}
+process speed: {2} frames per second
+process time: {3} seconds
+video length: {4} seconds
+        '''.format(ip, str(index), process_speed, time_use, video_time_sec)
     with open(full_path + '.analyze', 'w') as f2:
-        f2.write("IP:" + IP_ADDR + "\n" + "index: " + str(index))
+        f2.write(text)
+
+def test_write_analyze_file():
+    full_path = "1.mp4"
+    write_analyze(full_path, '1.1.1.1', [], 7000, 700, 150)
+    assert os.path.exists("1.mp4.analyze")
+    with open("1.mp4.analyze") as f1:
+        text = f1.read()
+        assert "IP: 1.1.1.1" in text
+        assert "index:[]" in text
+        assert "process speed: 10 frames per second" in text
+        assert "process time: 700 seconds" in text
+        assert "video length: 150 seconds" in text
+    os.remove("1.mp4.analyze")
+
 def run_it():
     #read_one_video("1.mp4")
     #process_one_video(os.path.join("test-T", "WIN_20220507_03_23_22_Pro.mp4"))
