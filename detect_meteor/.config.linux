@@ -1,0 +1,6 @@
+input_file_base_path = "/mnt/w/meteor_monitor/origin"
+base_output_path = "/mnt/w/meteor_monitor/meteor_store"
+PROCESS_START_TIME = "0010"
+PROCESS_END_TIME = "2350"
+EXECUTOR_NUM = 2
+PYTHON_BIN = "/home/pi/py37env/bin/python"
