@@ -45,6 +45,7 @@ def decode_fourcc(cc):
 
 def parse_config():
     global EXECUTOR_NUM, PROCESS_START_TIME, PROCESS_END_TIME
+    text = ""
     if os.path.exists(".config"):
         f1 = open(".config")
         text = f1.read()
