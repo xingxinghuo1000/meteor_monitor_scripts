@@ -8,6 +8,7 @@ import traceback
 import threading
 import queue
 import uuid
+import socket
 
 EXECUTOR_NUM = 4
 
@@ -22,6 +23,22 @@ queue_obj = queue.Queue()
 LOCK_STR = str(uuid.uuid4())
 PROCESS_START_TIME = '0700'
 PROCESS_END_TIME = '2200'
+IP_ADDR = ""
+
+def get_local_ip():
+    ip = ""
+    try:
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+    except:
+        pass
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
 
 def decode_fourcc(cc):
     return "".join([chr((int(cc) >> 8 * i) & 0xFF) for i in range(4)])
@@ -351,11 +368,19 @@ def process_one_video(full_path):
         for param in param_list:
             cmd = gen_ffmpg_split_cmd(param[0], param[1], full_path, base_output_path)
             print("run ffmpeg, cmd: ", cmd)
-            text = os.popen(cmd).read()
-            print("cmd ret: ", text)
+            if DEBUG == 0:
+                text = os.popen(cmd).read()
+                print("cmd ret: ", text)
+
+    print("try to create .analyze file")
+    with open(full_path + '.analyze', 'w') as f2:
+        f2.write("IP:" + IP_ADDR + "\n" + "index: " + str(index))
 def run_it():
     #read_one_video("1.mp4")
-    process_one_video("WIN_20220507_03_23_22_Pro.mp4")
+    #process_one_video(os.path.join("test-T", "WIN_20220507_03_23_22_Pro.mp4"))
+    #process_one_video(os.path.join("test-F", "WIN_20220518_03_26_44_Pro.mp4"))
+    #process_one_video(os.path.join("test-F", "WIN_20220518_04_10_47_Pro.mp4"))
+    process_one_video(os.path.join("test-F", "WIN_20220518_02_35_56_Pro.mp4"))
     #read_one_video("meteor-20211228.mp4")
     #read_one_video("meteor-20211229.mp4")
     #read_one_video("meteor-20211231.mp4")
@@ -389,9 +414,6 @@ def process_from_queue(q):
             print("process ret: ", text)
             # write analyze file, and remove lock file
             try:
-                print("try to create .analyze file")
-                with open(full_path + '.analyze', 'w') as f2:
-                    f2.write(" ")
                 print("try to remove lock file")
                 if os.path.exists(full_path + '.lock'):
                     os.remove(full_path + '.lock')
@@ -448,7 +470,7 @@ def try_lock_file(full_path):
     else:
         try:
             with open(lockfile, 'w') as f1:
-                f1.write(LOCK_STR)
+                f1.write(LOCK_STR + "\t" + "IP:" + IP_ADDR)
         except:
             return False
         if not os.path.exists(lockfile):
@@ -461,7 +483,7 @@ def try_lock_file(full_path):
                     str_read = f2.read().strip("\r\n").strip()
             except:
                 return False
-            if str_read != LOCK_STR:
+            if LOCK_STR not in str_read:
                 # may be written again be other process or other machine
                 return False
             else:
@@ -516,6 +538,8 @@ def test_should_process():
 
 if __name__ == "__main__":
     assert True == check_ffmpeg()
+    IP_ADDR = get_local_ip()
+    print("IP: ", IP_ADDR)
     for arg in sys.argv:
         if '--video_file=' in arg:
             print("process single video file")
@@ -525,6 +549,10 @@ if __name__ == "__main__":
             assert os.path.exists(full_path)
             print("full_path: ", full_path)
             process_one_video(full_path)
+            sys.exit(0)
+        if '--run_it' in arg:
+            DEBUG = 1
+            run_it()
             sys.exit(0)
     while 1:
         n = datetime.datetime.now()
