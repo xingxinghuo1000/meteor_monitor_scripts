@@ -417,7 +417,7 @@ index:{1}
 process speed: {2} frames per second
 process time: {3} seconds
 video length: {4} seconds
-        '''.format(ip, str(index), process_speed, time_use, video_time_sec)
+        '''.format(ip, str(index), process_speed, int(time_use), int(video_time_sec))
     with open(full_path + '.analyze', 'w') as f2:
         f2.write(text)
 
