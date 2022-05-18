@@ -9,6 +9,7 @@ import threading
 import queue
 import uuid
 import socket
+import json
 
 EXECUTOR_NUM = 4
 
@@ -480,11 +481,50 @@ def process_from_queue(q):
                 traceback.print_exc()
 
 
+# If process is killed, then lock file will be remained as trash
+# If the old lock is not deleted, then this video file will never be processed in the future
+# So in every loop, 
+# we will check lock file is too old, >= 3600 seconds, if True, then delete it
+def del_old_lock_files(lock_list):
+    # read lock content
+    for lock in lock_list:
+        if os.path.exists(lock):
+            try:
+                f1 = open(lock)
+                text = f1.read()
+                print("lock content: ", text)
+                f1.close()
+                d = json.loads(text)
+                if 'createTime' in d:
+                    lock_t = datetime.datetime.strptime(d['createTime'], "%Y-%m-%d %H:%M:%S")
+                    n = datetime.datetime.now()
+                    delta = n - lock_t
+                    if delta.seconds > 3600:
+                        os.remove(lock)
+            except:
+                print("delete old lock file Excepttion:")
+                traceback.print_exc()
+
+# test case
+def test_del_old_lock():
+    lock_content1 = '{"createTime": "2022-05-17 00:00:00"}'
+    with open("test1.mp4.lock", 'w') as f1:
+        f1.write(lock_content1)
+    lock_content2 = '{"createTime": "' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '"}'
+    with open("test2.mp4.lock", 'w') as f2:
+        f2.write(lock_content2)
+    del_old_lock_files(["test1.mp4.lock", "test2.mp4.lock"])
+    assert not os.path.exists("test1.mp4.lock")
+    assert os.path.exists("test2.mp4.lock")
+    os.remove("test2.mp4.lock")
+
 def batch_process():
     #run batch
     print("start one batch process")
-    video_list = os.listdir(input_file_base_path)
-    video_list = [x for x in video_list if x.endswith(".mp4")]
+    orig_list = os.listdir(input_file_base_path)
+    lock_list = [os.path.join(input_file_base_path, x) for x in orig_list if x.endswith(".lock")]
+    del_old_lock_files(lock_list)
+    video_list = [x for x in orig_list if x.endswith(".mp4")]
     if len(video_list) == 0:
         print("video list is empty, then return")
         return
@@ -528,8 +568,14 @@ def try_lock_file(full_path):
         return False
     else:
         try:
+            d = {
+                "createTime": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
+                "IP": IP_ADDR,
+                "LOCK_STR": LOCK_STR
+            }
+            lock_content = json.dumps(d)
             with open(lockfile, 'w') as f1:
-                f1.write(LOCK_STR + "\t" + "IP:" + IP_ADDR)
+                f1.write(lock_content)
         except:
             return False
         if not os.path.exists(lockfile):
