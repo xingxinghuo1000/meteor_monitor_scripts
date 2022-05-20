@@ -2,6 +2,12 @@
 import time
 import datetime
 import os
+import sys
+import json
+import urllib2
+import urllib
+
+SUNSET_URL = 'https://rili.ximizi.com/richuriluo.1.php?ivk_sa=1024320u'
 
 # 录制时间，单位秒
 RECORD_TIME = 150
@@ -9,6 +15,21 @@ START_TIME = '2300'
 END_TIME = '0500'
 MAX_VIDEO_SUM_SIZE = 45 * 1024 * 1024 * 1024
 video_local_dir = r'E:\video\camera'
+
+def read_sunset_sunrise_time():
+    global START_TIME, END_TIME
+    script_path = os.path.join('sikuli_open_camera.sikuli', 'get_sunrise_time.py')
+    ret = os.popen('python ' + script_path).read()
+    d = json.loads(ret)
+    sunrise = datetime.datetime.strptime(d[0], "%Y-%m-%d %H:%M:%S")
+    sunset =  datetime.datetime.strptime(d[1], "%Y-%m-%d %H:%M:%S")
+    #sunrise = d[0].replace(":", "")[0:4]
+    #sunset = d[1].replace(":", "")[0:4]
+    a = sunset + datetime.timedelta(seconds = 3600) 
+    START_TIME = a.strftime("%H%M")
+    b = sunrise - datetime.timedelta(seconds = 1800)
+    END_TIME = b.strftime("%H%M")
+    myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
 
 def is_hit_sum_size_limit():
     li = os.listdir(video_local_dir)
@@ -132,6 +153,8 @@ def try_close_camera():
     myPrint("close camera return")
     
 def main():
+    read_sunset_sunrise_time()
+
     # first, try to stop, if recording
     stop_record()
     cnt = 0
