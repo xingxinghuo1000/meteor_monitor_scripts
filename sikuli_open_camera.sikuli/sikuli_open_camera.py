@@ -4,10 +4,7 @@ import datetime
 import os
 import sys
 import json
-import urllib2
-import urllib
-
-SUNSET_URL = 'https://rili.ximizi.com/richuriluo.1.php?ivk_sa=1024320u'
+import traceback
 
 # 录制时间，单位秒
 RECORD_TIME = 150
@@ -147,16 +144,37 @@ def wait_util_stop():
 def try_close_camera():
     myPrint("try to close camera")
     wait(1)
-    if exists("1652018430575.png"): 
-        click(Pattern("1652018430575.png").targetOffset(370,-23))
+    if exists("1653186710812.png"): 
+        click(Pattern("1653186710812.png").targetOffset(169,-31))
         myPrint("close Done")
     myPrint("close camera return")
-    
-def main():
-    read_sunset_sunrise_time()
 
-    # first, try to stop, if recording
-    stop_record()
+def read_commands():
+    cmd_list = []
+    if os.path.exists('op.json'):
+        try:
+            f = open('op.json')
+            txt = f.read()
+            f.close()
+            cmd_list = json.loads(txt)
+            os.remove('op.json')
+        except:
+            traceback.print_exc()
+            
+    return cmd_list
+
+def execute_cmd(cmd_list):
+    for cmd in cmd_list:
+        if cmd == "start_record":
+            start_record()
+        if cmd == "stop_record":
+            stop_record()
+        if cmd == "try_close_camera":
+            try_close_camera()
+    
+
+def loop_process():
+    read_sunset_sunrise_time()
     cnt = 0
     while 1:
         if is_hit_sum_size_limit() == False and should_record(): 
@@ -172,5 +190,12 @@ def main():
         #    break
     # 退出时，尝试关闭camera
     try_close_camera()
-    
+
+def main():
+    cmd_list = read_commands()
+    if len(cmd_list) > 0:
+        execute_cmd(cmd_list)
+    else:
+        loop_process()
+
 main()
