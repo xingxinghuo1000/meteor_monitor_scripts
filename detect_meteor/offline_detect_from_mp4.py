@@ -174,7 +174,7 @@ def read_one_video(full_path):
     if (vid_capture.isOpened() == False):
         print("Error opening the video file")
         vid_capture.release()
-        return
+        return [], -1, -1, -1
     width = int(vid_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     print('video width: ', width)
     height = int(vid_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -397,15 +397,16 @@ def process_one_video(full_path):
     ret = read_one_video(full_path)
     t2 = time.time()
     index, frame_count, fps, time_sec = ret
-    process_speed = int(frame_count / (t2-t1))
-    param_list = calc_split_range(index, frame_count, fps, time_sec)
-    if len(param_list) > 0:
-        for param in param_list:
-            cmd = gen_ffmpg_split_cmd(param[0], param[1], full_path, base_output_path)
-            print("run ffmpeg, cmd: ", cmd)
-            if DEBUG == 0:
-                text = os.popen(cmd).read()
-                print("cmd ret: ", text)
+    if len(index) > 0:
+        process_speed = int(frame_count / (t2-t1))
+        param_list = calc_split_range(index, frame_count, fps, time_sec)
+        if len(param_list) > 0:
+            for param in param_list:
+                cmd = gen_ffmpg_split_cmd(param[0], param[1], full_path, base_output_path)
+                print("run ffmpeg, cmd: ", cmd)
+                if DEBUG == 0:
+                    text = os.popen(cmd).read()
+                    print("cmd ret: ", text)
     if DEBUG == 0:
         write_analyze(full_path, IP_ADDR, index, frame_count, t2-t1, time_sec)
 
