@@ -28,7 +28,9 @@ def read_sunset_sunrise_time():
     s = sun(city.observer, date=datetime.date.today(), tzinfo=city.timezone)
     sunrise=s['sunrise']
     sunset=s['sunset']
-    a = sunset + datetime.timedelta(seconds = 3600) 
+    myPrint("sunrise: " + str(sunrise))
+    myPrint("sunset: " + str(sunset))
+    a = sunset + datetime.timedelta(seconds = 600) 
     START_TIME = a.strftime("%H%M")
     b = sunrise - datetime.timedelta(seconds = 1800)
     END_TIME = b.strftime("%H%M")

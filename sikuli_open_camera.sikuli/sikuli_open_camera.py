@@ -18,8 +18,8 @@ def read_sunset_sunrise_time():
     script_path = os.path.join('sikuli_open_camera.sikuli', 'get_sunrise_time.py')
     ret = os.popen('python ' + script_path).read()
     d = json.loads(ret)
-    sunrise = datetime.datetime.strptime(d[0], "%Y-%m-%d %H:%M:%S")
-    sunset =  datetime.datetime.strptime(d[1], "%Y-%m-%d %H:%M:%S")
+    sunrise = datetime.datetime.strptime(d[0], "%H:%M:%S")
+    sunset =  datetime.datetime.strptime(d[1], "%H:%M:%S")
     #sunrise = d[0].replace(":", "")[0:4]
     #sunset = d[1].replace(":", "")[0:4]
     a = sunset + datetime.timedelta(seconds = 3600) 
@@ -182,6 +182,7 @@ def loop_process():
             wait_util_stop()    
         else:
             try_close_camera()
+            myPrint("sleep 60")
             time.sleep(60)
         cnt += 1
         myPrint("global iter num: " + str(cnt))
