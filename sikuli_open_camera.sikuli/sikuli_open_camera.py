@@ -16,22 +16,23 @@ video_local_dir = r'E:\video\camera'
 def read_sunset_sunrise_time():
     global START_TIME, END_TIME
     myPrint("try get sunrise sunset time")
-    script_path = os.path.join('sikuli_open_camera.sikuli', 'get_sunrise_time.py')
-    ret = os.popen('python ' + script_path).read()
-    myPrint("get_sunrise_time.py ret: " + ret)
-    try: 
-        d = json.loads(ret)
-        sunrise = datetime.datetime.strptime(d[0], "%H:%M:%S")
-        sunset =  datetime.datetime.strptime(d[1], "%H:%M:%S")
-        #sunrise = d[0].replace(":", "")[0:4]
-        #sunset = d[1].replace(":", "")[0:4]
-        a = sunset + datetime.timedelta(seconds = 3600) 
-        START_TIME = a.strftime("%H%M")
-        b = sunrise - datetime.timedelta(seconds = 1800)
-        END_TIME = b.strftime("%H%M")
-        myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
-    except:
-        traceback.print_exc()
+    current_month = datetime.datetime.now().strftime("%m")
+    idx = int(current_month) - 1
+    s =  get_sunrise_time(idx)
+    myPrint("s: " + str(s))
+    s0 = datetime.datetime.strptime(s[1], "%H%M") + datetime.timedelta(seconds=3600)
+    s1 = datetime.datetime.strptime(s[0], "%H%M") - datetime.timedelta(seconds=3600)
+    START_TIME = s0.strftime("%H%M")
+    END_TIME = s1.strftime("%H%M")
+    myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
+
+def get_sunrise_time(idx):
+    li = [["0733", "1713"], ["0707", "1749"], ["0625", "1820"], ["0536", "1852"],
+          ["0456", "1923"], ["0445", "1944"], ["0458", "1942"], ["0526", "1911"],
+          ["0555", "1824"], ["0624", "1735"], ["0659", "1658"], ["0728", "1650"]]
+    s = li[idx]
+    return s
+
 
 def is_hit_sum_size_limit():
     li = os.listdir(video_local_dir)
@@ -180,9 +181,9 @@ def execute_cmd(cmd_list):
     
 
 def loop_process(): 
-    read_sunset_sunrise_time()
     cnt = 0
     while 1:
+        read_sunset_sunrise_time()
         if is_hit_sum_size_limit() == False and should_record(): 
             start_record()
             wait_util_stop()    
@@ -190,7 +191,6 @@ def loop_process():
             try_close_camera()
             myPrint("sleep 60")
             time.sleep(60)
-            read_sunset_sunrise_time()
         cnt += 1
         myPrint("global iter num: " + str(cnt))
         # 调试时，打开以下注释
