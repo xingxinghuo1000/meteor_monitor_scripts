@@ -5,9 +5,14 @@ import requests
 
 
 def main():
+    URL = "https://richurimo.bmcx.com/beijing__richurimo/"
     today = datetime.datetime.now().strftime("%Y年%m月%d日")
-    bytes1 = requests.get("https://richurimo.bmcx.com/beijing__richurimo/").content
-    text = bytes1.decode("utf-8")
+    text  = ""
+    try:
+        bytes1 = requests.get(URL, timeout=(1,1)).content
+        text = bytes1.decode("utf-8")
+    except:
+        traceback.print_exc()
     for tr in text.split("<tr"):
         if '</tr>' in tr:
             line = tr.split("</tr>")[0]

@@ -50,6 +50,8 @@ def sync_one_video():
     src_videos.sort()
     print('found video list: ', src_videos)
     if len(src_videos) == 0:
+        print("sleep 120")
+        time.sleep(120)
         return
     one_video_path = os.path.join(video_path, src_videos[0])
     target_video = os.path.join(target_dir, src_videos[0])

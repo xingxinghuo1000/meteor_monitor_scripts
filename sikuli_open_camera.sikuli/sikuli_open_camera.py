@@ -15,18 +15,23 @@ video_local_dir = r'E:\video\camera'
 
 def read_sunset_sunrise_time():
     global START_TIME, END_TIME
+    myPrint("try get sunrise sunset time")
     script_path = os.path.join('sikuli_open_camera.sikuli', 'get_sunrise_time.py')
     ret = os.popen('python ' + script_path).read()
-    d = json.loads(ret)
-    sunrise = datetime.datetime.strptime(d[0], "%H:%M:%S")
-    sunset =  datetime.datetime.strptime(d[1], "%H:%M:%S")
-    #sunrise = d[0].replace(":", "")[0:4]
-    #sunset = d[1].replace(":", "")[0:4]
-    a = sunset + datetime.timedelta(seconds = 3600) 
-    START_TIME = a.strftime("%H%M")
-    b = sunrise - datetime.timedelta(seconds = 1800)
-    END_TIME = b.strftime("%H%M")
-    myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
+    myPrint("get_sunrise_time.py ret: " + ret)
+    try: 
+        d = json.loads(ret)
+        sunrise = datetime.datetime.strptime(d[0], "%H:%M:%S")
+        sunset =  datetime.datetime.strptime(d[1], "%H:%M:%S")
+        #sunrise = d[0].replace(":", "")[0:4]
+        #sunset = d[1].replace(":", "")[0:4]
+        a = sunset + datetime.timedelta(seconds = 3600) 
+        START_TIME = a.strftime("%H%M")
+        b = sunrise - datetime.timedelta(seconds = 1800)
+        END_TIME = b.strftime("%H%M")
+        myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
+    except:
+        traceback.print_exc()
 
 def is_hit_sum_size_limit():
     li = os.listdir(video_local_dir)
@@ -118,6 +123,7 @@ def make_done_file():
 
 def should_record():
     n = datetime.datetime.now()
+    myPrint("current n: " + str(n))
     hourMin = n.strftime("%H%M")
     myPrint("current time: " + hourMin)
     if hourMin > START_TIME and hourMin < '2359':
@@ -173,7 +179,7 @@ def execute_cmd(cmd_list):
             try_close_camera()
     
 
-def loop_process():
+def loop_process(): 
     read_sunset_sunrise_time()
     cnt = 0
     while 1:
@@ -184,6 +190,7 @@ def loop_process():
             try_close_camera()
             myPrint("sleep 60")
             time.sleep(60)
+            read_sunset_sunrise_time()
         cnt += 1
         myPrint("global iter num: " + str(cnt))
         # 调试时，打开以下注释
