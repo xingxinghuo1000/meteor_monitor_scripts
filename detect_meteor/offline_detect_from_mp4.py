@@ -75,11 +75,18 @@ def parse_config():
             print("resolve PARAM, PYTHON_BIN: ", PYTHON_BIN)
 
 
-def mask_img(img, w, h):
-    mask_file = 'mask-1280-720.bmp'
-    if not os.path.exists(mask_file):
+def mask_img(full_path, img, w, h):
+    base_dir = os.path.dirname(full_path)
+    mask_file1 = os.path.join(base_dir, 'mask-1280-720.bmp')
+    mask_file2 = 'mask-1280-720.bmp'
+    
+    if not os.path.exists(mask_file1) and not os.path.exists(mask_file1):
         return img
-    img_mask = cv2.imread(mask_file)
+    if os.path.exists(mask_file1):
+        img_mask = cv2.imread(mask_file1)
+    else: 
+        if os.path.exists(mask_file2):
+            img_mask = cv2.imread(mask_file2)
     if w != 1280:
         img_mask = cv2.resize(img_mask, (w,h))
     ret_img = cv2.bitwise_and(img, img_mask)
@@ -111,6 +118,10 @@ def check_ffmpeg():
 def test_check_ffmpeg():
     assert True == check_ffmpeg()
 
+
+es = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 4))
+# quote from : https://blog.csdn.net/drippingstone/article/details/116081434， 帧差法基本原理和实现
+# quote from : https://www.cnblogs.com/my-love-is-python/p/10394908.html 形态学腐蚀和膨胀
 def process_one_frame(data_obj):
 
     width = data_obj["width"]
@@ -121,6 +132,8 @@ def process_one_frame(data_obj):
     cnt = data_obj['frame_idx']
     ret = data_obj["ret"]
     frame = data_obj["frame"]
+    filter_info_list = data_obj["filter_info_list"]
+    full_path = data_obj['full_path']
     # got Finish signal, then break
     if ret == False:
         return
@@ -134,37 +147,49 @@ def process_one_frame(data_obj):
             data_obj['t1'] = t2
         print("frame count: ", cnt, '  total: ', frame_count)
     match = 0
-    m_img = mask_img(frame, width, height)
+    
+    m_img = mask_img(full_path, frame, width, height)
     #cv2.imshow("masked_image", m_img)
     # get background image, every 600 frames
+    # 对帧进行预处理，先转灰度图，再进行高斯滤波。
+    # 用高斯滤波进行模糊处理，进行处理的原因：每个输入的视频都会因自然震动、光照变化或者摄像头本身等原因而产生噪声。对噪声进行平滑是为了避免在运动和跟踪时将其检测出来。
     gray_lwpCV, resized_frame = convert_img(m_img)
     if cnt % split_limit == 0:
         print("set background")
         data_obj['background']=gray_lwpCV
     else:
+        # 对于每个从背景之后读取的帧都会计算其与北京之间的差异，并得到一个差分图（different map）
         diff = cv2.absdiff(background, gray_lwpCV)
         #cv2.imshow("background", background)
         #cv2.imshow("gray_lwpCV", gray_lwpCV)
         #cv2.imshow("diff", diff)
-        diff = cv2.threshold(diff, thres1, 255, cv2.THRESH_BINARY)[1]
-        ret,thresh = cv2.threshold(diff.copy(),150,255,0)
-        #print("thresh: ", thresh)
-        contours, hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-        #contours, hierarchy = cv2.findContours(diff.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # 还需要应用阈值来得到一幅黑白图像，并通过下面代码来膨胀（dilate）图像，从而对孔（hole）和缺陷（imperfection）进行归一化处理
+        diff2 = cv2.threshold(diff, thres1, 255, cv2.THRESH_BINARY)[1] # 二值化处理
+        diff3 = cv2.threshold(diff2,150,255,0)[1]
+        #diff4 = cv2.dilate(diff3, es, iterations=2) # 形态学膨胀
+        contours, hierarchy = cv2.findContours(diff3, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
         for c in contours:
             if cv2.contourArea(c) < area_threh :
+                #filter_info_list.append(item)
                 continue
-            else:
-                (x, y, w, h) = cv2.boundingRect(c)
-                cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                #cv2.imshow("rectangle", frame)
-                #print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
-                match = 1
-                data_obj['index'].append(cnt)
+            if cv2.contourArea(c) > int(512*512*0.5):
+                item = {
+                    "filter_reason": "area too small", 
+                    "c": "w, y, w, h: " + str(cv2.boundingRect(c)), 
+                    "frame_idx": cnt
+                }
+                filter_info_list.append(item)
+                continue
+            (x, y, w, h) = cv2.boundingRect(c)
+            cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
+            match = 1
+        if match == 1:
+            data_obj['index'].append(cnt)
     if DEBUG:
         cv2.imshow("frame: ", resized_frame)
     if DEBUG:
-        key = cv2.waitKey(50)
+        key = cv2.waitKey(5)
 
     data_obj["frame_idx"] += 1
 
@@ -182,7 +207,7 @@ def read_one_video(full_path):
     fourcc = int(vid_capture.get(cv2.CAP_PROP_FOURCC))
     print("fourcc: ", decode_fourcc(fourcc))
     fps = vid_capture.get(cv2.CAP_PROP_FPS)
-    print('Frames per second : ', fps,'FPS')
+    print('Frames per second : ', int(fps),'FPS')
     frame_count = vid_capture.get(7)
     print('Frame count : ', frame_count)
     time_sec = frame_count / fps
@@ -194,9 +219,13 @@ def read_one_video(full_path):
         "width": width,
         "height": height,
         "frame_count": frame_count,
+        "fps": fps,
+        "time_sec": time_sec,
         "background": None,
         "last_cnt": 0,
         "t1": time.time(),
+        "filter_info_list": [],
+        "full_path": full_path,
     }
     while 1:
         ret, frame = read_one_frame(vid_capture)
@@ -208,7 +237,8 @@ def read_one_video(full_path):
 
     vid_capture.release()
     print("index: ", index)
-    return index, frame_count, fps, time_sec
+    print("filter_info_list: ", data_obj['filter_info_list'])
+    return data_obj
 
 def seconds_to_hum_readable(secs):
     h = secs / 3600
@@ -396,7 +426,11 @@ def process_one_video(full_path):
     t1 = time.time()
     ret = read_one_video(full_path)
     t2 = time.time()
-    index, frame_count, fps, time_sec = ret
+    index = ret['index']
+    frame_count = ret['frame_count']
+    fps = ret['fps']
+    time_sec = ret['time_sec']
+    filter_info_list = ret['filter_info_list']
     if len(index) > 0:
         process_speed = int(frame_count / (t2-t1))
         param_list = calc_split_range(index, frame_count, fps, time_sec)
@@ -407,21 +441,27 @@ def process_one_video(full_path):
                 if DEBUG == 0:
                     text = os.popen(cmd).read()
                     print("cmd ret: ", text)
-    if DEBUG == 0:
-        write_analyze(full_path, IP_ADDR, index, frame_count, t2-t1, time_sec)
+    print("process time: ", int(t2-t1))
+    print("process speed fps: ", int(frame_count/(t2-t1)))
+    write_analyze(full_path, IP_ADDR, index, frame_count, t2-t1, time_sec, filter_info_list)
 
-def write_analyze(full_path, ip, index, frame_count, time_use, video_time_sec):
+def write_analyze(full_path, ip, index, frame_count, time_use, video_time_sec, filter_info_list):
     ana_file = full_path + '.analyze'
     process_speed = int(frame_count/time_use)
     print("try to create .analyze file, path: ", ana_file)
-    text = r'''IP: {0}
-index:{1}
-process speed: {2} frames per second
-process time: {3} seconds
-video length: {4} seconds
-        '''.format(ip, str(index), process_speed, int(time_use), int(video_time_sec))
-    with open(full_path + '.analyze', 'w') as f2:
-        f2.write(text)
+    d = {}
+    d["IP"] = ip
+    d["index"] = index
+    d["process speed fps"] = process_speed
+    d['process time second'] = int(time_use)
+    d['video length second'] = int(video_time_sec)
+    d['filter_info_list'] = filter_info_list
+    text = json.dumps(d, ensure_ascii=False, indent=2)
+    if DEBUG:
+        print("analyze result:\n" + text)
+    else:
+        with open(full_path + '.analyze', 'w') as f2:
+            f2.write(text)
 
 def test_write_analyze_file():
     full_path = "1.mp4"
@@ -648,6 +688,8 @@ if __name__ == "__main__":
     print("IP: ", IP_ADDR)
     parse_config()
     for arg in sys.argv:
+        if '--debug' in arg:
+            DEBUG = 1
         if '--video_file=' in arg:
             print("process single video file")
             full_path = arg.split("--video_file=")[1]
