@@ -74,21 +74,23 @@ def parse_config():
             PYTHON_BIN = line.split("=")[1].strip(' "')
             print("resolve PARAM, PYTHON_BIN: ", PYTHON_BIN)
 
-
+img_mask = None
 def mask_img(full_path, img, w, h):
-    base_dir = os.path.dirname(full_path)
-    mask_file1 = os.path.join(base_dir, 'mask-1280-720.bmp')
-    mask_file2 = 'mask-1280-720.bmp'
-    
-    if not os.path.exists(mask_file1) and not os.path.exists(mask_file1):
-        return img
-    if os.path.exists(mask_file1):
-        img_mask = cv2.imread(mask_file1)
-    else: 
-        if os.path.exists(mask_file2):
-            img_mask = cv2.imread(mask_file2)
-    if w != 1280:
-        img_mask = cv2.resize(img_mask, (w,h))
+    global img_mask
+    if img_mask == None:
+        base_dir = os.path.dirname(full_path)
+        mask_file1 = os.path.join(base_dir, 'mask-1280-720.bmp')
+        mask_file2 = 'mask-1280-720.bmp'
+        
+        if not os.path.exists(mask_file1) and not os.path.exists(mask_file1):
+            return img
+        if os.path.exists(mask_file1):
+            img_mask = cv2.imread(mask_file1)
+        else: 
+            if os.path.exists(mask_file2):
+                img_mask = cv2.imread(mask_file2)
+        if w != 1280:
+            img_mask = cv2.resize(img_mask, (w,h))
     ret_img = cv2.bitwise_and(img, img_mask)
     return ret_img
 
