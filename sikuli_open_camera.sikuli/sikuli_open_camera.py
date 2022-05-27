@@ -7,11 +7,11 @@ import json
 import traceback
 
 # 录制时间，单位秒
-RECORD_TIME = 150
+RECORD_TIME = 200
 START_TIME = '2300'
 END_TIME = '0500'
 MAX_VIDEO_SUM_SIZE = 45 * 1024 * 1024 * 1024
-video_local_dir = r'E:\video\camera'
+video_local_dir = r'D:\video\camera'
 
 def read_sunset_sunrise_time():
     global START_TIME, END_TIME
@@ -21,7 +21,7 @@ def read_sunset_sunrise_time():
     s =  get_sunrise_time(idx)
     myPrint("s: " + str(s))
     s0 = datetime.datetime.strptime(s[1], "%H%M") + datetime.timedelta(seconds=3600)
-    s1 = datetime.datetime.strptime(s[0], "%H%M") - datetime.timedelta(seconds=3600)
+    s1 = datetime.datetime.strptime(s[0], "%H%M") - datetime.timedelta(seconds=1800)
     START_TIME = s0.strftime("%H%M")
     END_TIME = s1.strftime("%H%M")
     myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
@@ -53,61 +53,100 @@ def myPrint(s):
     print("[" + str(n) + "] " + s)
 
 def start_camera():
-    wait(1)
+    myPrint("sleep 1")
+    time.sleep(1)
     
-    if exists("1652014299798.png"):
-        click("1652014190576.png")
+    if exists("1653380510315.png"):
+        click("1653380510315.png")
+        myPrint("sleep 2")
+        time.sleep(2)
     else: 
-        if exists("1652014232416.png"):
-            click("1652014232416.png")
+        if exists("1653380510315.png"):
+            click("1653380510315.png")
+            myPrint("sleep 2")
+            time.sleep(2)
 
 def try_click_start_button():
+    myPrint("try to click start button ---  ")
+    myPrint("sleep 1")
     time.sleep(1)
     try:
-        wait("1652015554359.png")
+        wait(Pattern("1653387312788.png").similar(0.80))
     except:
         myPrint("wait start button failed")
+    myPrint("sleep 1")
     time.sleep(1)
-    if exists("1652015554359.png"):
+    if exists(Pattern("1653387312788.png").similar(0.80)):
         try:
-            click(Pattern("1652015554359.png").similar(0.64))
+            click(Pattern("1653387312788.png").similar(0.74))
             myPrint("start done, then return")
+            click(Pattern("1653186710812.png").targetOffset(-36,-32))
+            myPrint("sleep 2")
+            time.sleep(2)
             return True
         except:
             pass
     myPrint("click start button failed")
+    myPrint("sleep 1")
     time.sleep(1)
     return False
         
 def start_record():
-    myPrint("start record")
+    myPrint("start record function")
+    if exists(Pattern("1652015879422.png").similar(0.86)):
+        myPrint("warning!! stop button should not exists. then stop it then return")
+        try_click_stop_button()
+        myPrint("sleep 2")
+        time.sleep(2)
     ret = try_click_start_button()
     if ret == False:
+        myPrint("first try failed, then retry")
         ret = try_click_start_button()
         if ret == False:
+            myPrint("second try failed")
             # 可能是camera没启动   
             print("can not find record button. try to start camera")
             start_camera()
+            myPrint("sleep 5")
+            time.sleep(5)
             myPrint("start OK, now try to start record")
             ret = try_click_start_button()
             if ret == False:
                 ret = try_click_start_button()
                 if ret == False:
                     myPrint("after retry and retry, still cannot click start button")
-               
+                else:
+                    myPrint("start record OK")
+            else:
+                myPrint("start record OK")
+        else:
+            myPrint("start record OK")
+    else:
+        myPrint("start record OK")
+
+        
+def try_click_stop_button():
+    myPrint("try_click_stop_button")
+    if exists(Pattern("1652015879422.png").similar(0.81)):
+        click(Pattern("1652015879422.png").similar(0.81))
+        myPrint("stop done, then return True")
+        click(Pattern("1653186710812.png").targetOffset(-36,-32))
+        myPrint("sleep 2")
+        time.sleep(2)
+        return True
+    return False
+
 def stop_record():
     myPrint("try to stop record")
-    if exists("1652015879422.png"):
-        click("1652015879422.png")
-        myPrint("stop done, then return")
-        time.sleep(1)
-        return
+    ret = try_click_stop_button()
+    if ret == False:
+        ret = try_click_stop_button()
+        if ret == False:
+            myPrint("second try return False")
+        else:
+            myPrint("stop OK ")
     else:
-        myPrint("can not find stop record button, now retry")
-        time.sleep(4)
-        if exists("1652015879422.png"):
-            click("1652015879422.png")
-            time.sleep(1)
+        myPrint("stop OK ")
 
 def switch_video():
     pass
@@ -123,6 +162,7 @@ def make_done_file():
                 f2.write(" ")
 
 def should_record():
+    #return True
     n = datetime.datetime.now()
     myPrint("current n: " + str(n))
     hourMin = n.strftime("%H%M")
@@ -151,9 +191,16 @@ def wait_util_stop():
 def try_close_camera():
     myPrint("try to close camera")
     wait(1)
-    if exists("1653186710812.png"): 
-        click(Pattern("1653186710812.png").targetOffset(169,-31))
-        myPrint("close Done")
+    if exists(Pattern("1652015879422.png").similar(0.81)):
+        if exists("1653186710812.png"): 
+            click(Pattern("1653186710812.png").targetOffset(169,-31)) 
+            myPrint("close Done")
+            
+    if exists(Pattern("1653387312788.png").similar(0.80)):
+        if exists("1653186710812.png"): 
+            click(Pattern("1653186710812.png").targetOffset(169,-31)) 
+            myPrint("close Done")
+            
     myPrint("close camera return")
 
 def read_commands():
@@ -186,7 +233,7 @@ def loop_process():
         read_sunset_sunrise_time()
         if is_hit_sum_size_limit() == False and should_record(): 
             start_record()
-            wait_util_stop()    
+            wait_util_stop() 
         else:
             try_close_camera()
             myPrint("sleep 60")
