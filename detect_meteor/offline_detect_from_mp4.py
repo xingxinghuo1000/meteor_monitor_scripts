@@ -75,9 +75,10 @@ def parse_config():
             print("resolve PARAM, PYTHON_BIN: ", PYTHON_BIN)
 
 img_mask = None
+has_load_img_mask = 0
 def mask_img(full_path, img, w, h):
-    global img_mask
-    if img_mask == None:
+    global img_mask, has_load_img_mask
+    if has_load_img_mask == 0:
         base_dir = os.path.dirname(full_path)
         mask_file1 = os.path.join(base_dir, 'mask-1280-720.bmp')
         mask_file2 = 'mask-1280-720.bmp'
@@ -91,6 +92,7 @@ def mask_img(full_path, img, w, h):
                 img_mask = cv2.imread(mask_file2)
         if w != 1280:
             img_mask = cv2.resize(img_mask, (w,h))
+        has_load_img_mask = 1
     ret_img = cv2.bitwise_and(img, img_mask)
     return ret_img
 
