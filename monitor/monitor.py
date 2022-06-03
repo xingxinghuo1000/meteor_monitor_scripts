@@ -12,6 +12,8 @@ save_path1 = 'img_record'
 save_path2 = r'W:\meteor_monitor\img_record'
 
 def screen_shot(save_path):
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     n = datetime.datetime.now()
     s = n.strftime('%Y%m%d-%H%M%S.jpg')
     file_name = os.path.join(save_path, s) 
@@ -45,7 +47,7 @@ def main(save_path):
 if __name__ == "__main__":
     t1 = threading.Thread(target=main, args=(save_path1,), daemon=True)
     t1.start()
-    t2 = threading.Thread(target=main, args=(save_path2,), daemon=True)
-    t2.start()
+    #t2 = threading.Thread(target=main, args=(save_path2,), daemon=True)
+    #t2.start()
     t1.join()
-    t2.join()
+    #t2.join()
