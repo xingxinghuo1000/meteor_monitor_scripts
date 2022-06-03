@@ -14,7 +14,7 @@ import json
 EXECUTOR_NUM = 4
 
 DEBUG = 0
-split_limit = 600
+split_limit = 200
 area_threh = 9
 thres1 = 20
 prefix_video_sec = 1.0 # when cut video, keep 1 seconds before meteor
@@ -177,8 +177,10 @@ def process_one_frame(data_obj):
                 #filter_info_list.append(item)
                 continue
             if cv2.contourArea(c) > int(512*512*0.5):
+                print("area: ",  cv2.contourArea(c))
+                print("SKIP this frame, filter by area too big")
                 item = {
-                    "filter_reason": "area too small", 
+                    "filter_reason": "area too big", 
                     "c": "w, y, w, h: " + str(cv2.boundingRect(c)), 
                     "frame_idx": cnt
                 }
@@ -187,6 +189,22 @@ def process_one_frame(data_obj):
             (x, y, w, h) = cv2.boundingRect(c)
             cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
             print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
+            crop_diff = gray_lwpCV[y:y+h, x:x+w]
+            crop_orig = background[y:y+h, x:x+w]
+            mean_crop_diff = cv2.mean(crop_diff)[0]
+            mean_crop_orig = cv2.mean(crop_orig)[0]
+            if mean_crop_diff <mean_crop_orig:
+                print("mean_crop_diff: ", mean_crop_diff)
+                print("mean_crop_orig: ", mean_crop_orig)
+                print("SKIP this frame, filter by bird bug or bat")
+                item = {
+                    "filter_reason": " bird bug or bat", 
+                    "c": "w, y, w, h: " + str(cv2.boundingRect(c)), 
+                    "frame_idx": cnt
+                }
+                filter_info_list.append(item)
+
+                continue
             match = 1
         if match == 1:
             data_obj['index'].append(cnt)
@@ -691,9 +709,9 @@ if __name__ == "__main__":
     IP_ADDR = get_local_ip()
     print("IP: ", IP_ADDR)
     parse_config()
+    if '--debug' in sys.argv:
+        DEBUG = 1
     for arg in sys.argv:
-        if '--debug' in arg:
-            DEBUG = 1
         if '--video_file=' in arg:
             print("process single video file")
             full_path = arg.split("--video_file=")[1]
