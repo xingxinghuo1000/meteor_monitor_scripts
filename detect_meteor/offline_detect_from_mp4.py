@@ -15,7 +15,7 @@ EXECUTOR_NUM = 4
 
 DEBUG = 0
 split_limit = 20
-area_threh = 9
+area_threh = 5
 thres1 = 20
 prefix_video_sec = 1.0 # when cut video, keep 1 seconds before meteor
 base_output_path = r'W:\meteor_monitor\meteor_store'
