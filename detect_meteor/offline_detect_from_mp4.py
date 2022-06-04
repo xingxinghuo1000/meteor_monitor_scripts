@@ -195,8 +195,7 @@ def process_one_frame(data_obj):
             mean_crop_diff = cv2.mean(crop_diff)[0]
             mean_crop_orig = cv2.mean(crop_orig)[0]
             # condition 1, lightness < orgin
-            # condition 2, not too small
-            if mean_crop_diff < mean_crop_orig and area > 20:
+            if mean_crop_diff < mean_crop_orig:
                 print("mean_crop_diff: ", mean_crop_diff)
                 print("mean_crop_orig: ", mean_crop_orig)
                 print("SKIP this frame, filter by bird bug or bat")
