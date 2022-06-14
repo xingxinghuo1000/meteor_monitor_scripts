@@ -10,11 +10,12 @@ import queue
 import uuid
 import socket
 import json
+import numpy as np
 
 EXECUTOR_NUM = 4
 
 DEBUG = 0
-split_limit = 200
+split_limit = 100
 area_threh = 5
 thres1 = 20
 prefix_video_sec = 1.0 # when cut video, keep 1 seconds before meteor
@@ -123,6 +124,19 @@ def test_check_ffmpeg():
     assert True == check_ffmpeg()
 
 
+last_20_frame = []
+def save_recent_frames(img, frame_list):
+    if len(frame_list) > 10:
+        del frame_list[0]
+    frame_list.append(img)
+
+def get_recent_avg_img(frames):
+    #return frames[-1]
+    #cv2.imshow("one", frames[0])
+    median = np.median(frames, axis=0).astype(dtype=np.uint8)
+    #cv2.imshow("median", median)
+    return median
+
 es = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 4))
 # quote from : https://blog.csdn.net/drippingstone/article/details/116081434， 帧差法基本原理和实现
 # quote from : https://www.cnblogs.com/my-love-is-python/p/10394908.html 形态学腐蚀和膨胀
@@ -141,8 +155,6 @@ def process_one_frame(data_obj):
     # got Finish signal, then break
     if ret == False:
         return
-    if cnt == 0 and DEBUG == 1:
-        cv2.imwrite("1.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
     if cnt %200 == 0:
         if cnt > 100:
             t2 = time.time()
@@ -158,9 +170,13 @@ def process_one_frame(data_obj):
     # 对帧进行预处理，先转灰度图，再进行高斯滤波。
     # 用高斯滤波进行模糊处理，进行处理的原因：每个输入的视频都会因自然震动、光照变化或者摄像头本身等原因而产生噪声。对噪声进行平滑是为了避免在运动和跟踪时将其检测出来。
     gray_lwpCV, resized_frame = convert_img(m_img)
+    # save recent 20 frames, for further purpose
+    save_recent_frames(gray_lwpCV, last_20_frame)
     if cnt % split_limit == 0:
         print("set background")
-        data_obj['background']=gray_lwpCV
+        data_obj['background'] = get_recent_avg_img(last_20_frame)
+        cv2.imwrite("back.jpg", data_obj['background'], [int(cv2.IMWRITE_JPEG_QUALITY),100])
+        cv2.imwrite("one.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
     else:
         # 对于每个从背景之后读取的帧都会计算其与北京之间的差异，并得到一个差分图（different map）
         diff = cv2.absdiff(background, gray_lwpCV)
@@ -188,8 +204,10 @@ def process_one_frame(data_obj):
                 filter_info_list.append(item)
                 continue
             (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-            print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
+            #x -= 2
+            #y -= 2
+            #w += 2
+            #h += 2
             crop_diff = gray_lwpCV[y:y+h, x:x+w]
             crop_orig = background[y:y+h, x:x+w]
             mean_crop_diff = cv2.mean(crop_diff)[0]
@@ -201,11 +219,13 @@ def process_one_frame(data_obj):
                 print("SKIP this frame, filter by bird bug or bat")
                 item = {
                     "filter_reason": " bird bug or bat", 
-                    "c": "w, y, w, h: " + str(cv2.boundingRect(c)), 
+                    "c": "w, y, w, h: " + str((x,y,w,h)), 
                     "frame_idx": cnt
                 }
                 filter_info_list.append(item)
                 continue
+            cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
 
             match = 1
         if match == 1:
