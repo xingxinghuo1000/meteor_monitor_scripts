@@ -4,7 +4,7 @@ import time
 import traceback
 
 video_path = r'D:\video\camera'
-target_dir = r'W:\meteor_monitor\origin'
+target_dir = r'E:\meteor_monitor\origin'
 MAX_TARGET_VIDEO_SIZE = 60 * 1024 * 1024 * 1024
 
 
