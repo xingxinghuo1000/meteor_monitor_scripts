@@ -28,6 +28,9 @@ def delete_old_video():
         analyze_file = os.path.join(target_dir, videos[0] + '.analyze')
         if os.path.exists(analyze_file):
             os.remove(analyze_file)
+        time_elapse_file =  os.path.join(target_dir, videos[0].replace(".mp4", "")  + '.120x.mp4')
+        if os.path.exists(time_elapse_file):
+            os.remove(time_elapse_file)
         videos = os.listdir(target_dir)
         videos = [x for x in videos if x.endswith('.mp4')]
         videos.sort()
