@@ -124,7 +124,7 @@ def test_check_ffmpeg():
     assert True == check_ffmpeg()
 
 
-last_20_frame = []
+last_5_frame = []
 def save_recent_frames(img, frame_list):
     if len(frame_list) > 10:
         del frame_list[0]
@@ -170,11 +170,11 @@ def process_one_frame(data_obj):
     # 对帧进行预处理，先转灰度图，再进行高斯滤波。
     # 用高斯滤波进行模糊处理，进行处理的原因：每个输入的视频都会因自然震动、光照变化或者摄像头本身等原因而产生噪声。对噪声进行平滑是为了避免在运动和跟踪时将其检测出来。
     gray_lwpCV, resized_frame = convert_img(m_img)
-    # save recent 20 frames, for further purpose
-    save_recent_frames(gray_lwpCV, last_20_frame)
+    # save recent 5 frames, for further purpose
+    save_recent_frames(gray_lwpCV, last_5_frame)
     if cnt % split_limit == 0:
         print("set background")
-        data_obj['background'] = get_recent_avg_img(last_20_frame)
+        data_obj['background'] = get_recent_avg_img(last_5_frame)
         cv2.imwrite("back.jpg", data_obj['background'], [int(cv2.IMWRITE_JPEG_QUALITY),100])
         cv2.imwrite("one.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
     else:
@@ -280,11 +280,49 @@ def read_one_video(full_path):
         if ret == False:
             break
         process_one_frame(data_obj)
+        process_time_elapse_one_frame(data_obj)
 
     vid_capture.release()
+    if 'elapse_120x' in data_obj:
+        data_obj['elapse_120x'].release()
+        convert_avi_to_264(data_obj['elapse_120x_fn'])
     print("index: ", index)
     print("filter_info_list: ", data_obj['filter_info_list'])
     return data_obj
+
+def convert_avi_to_264(full_name):
+    print("convert avi to h264")
+    h264_name = full_name.replace(".avi", "") + ".mp4"
+    if os.path.exists(h264_name):
+        os.remove(h264_name)
+    cmd = r'''ffmpeg -i "{0}"  -c:v h264 -b:v 8000k -strict -2  "{1}"'''.format(
+        full_name, h264_name)
+    print("cmd: ", cmd)
+    os.system(cmd)
+    os.remove(full_name)
+
+frames_elapse = []
+def process_time_elapse_one_frame(data_obj):
+    global frames_elapse
+    if 'elapse_120x' not in data_obj:
+        base_dir = os.path.dirname(data_obj['full_path'])
+        name = os.path.basename(data_obj['full_path']).replace(".mp4", "")
+        name += '.120x.avi'
+        fn = os.path.join(base_dir, name)
+        data_obj['elapse_120x_fn'] = fn
+        if os.path.exists(fn):
+            os.remove(fn)
+        videoWriter = cv2.VideoWriter(fn, 
+            cv2.VideoWriter_fourcc('I', '4', '2', '0'), 
+            data_obj['fps'], 
+            (data_obj['width'],data_obj['height']))
+        data_obj['elapse_120x'] = videoWriter
+    if data_obj['frame_idx'] % 120 < 20:
+        frames_elapse.append(data_obj['frame'])
+    if data_obj['frame_idx'] % 120 == 20:
+        m = get_recent_avg_img(frames_elapse)
+        frames_elapse = []
+        data_obj['elapse_120x'].write(m)
 
 def seconds_to_hum_readable(secs):
     h = secs / 3600
@@ -736,6 +774,8 @@ if __name__ == "__main__":
     if '--debug' in sys.argv:
         DEBUG = 1
     for arg in sys.argv:
+        if '--video-file=' in arg:
+            arg = arg.replace("--video-file=", "--video_file=")
         if '--video_file=' in arg:
             print("process single video file")
             full_path = arg.split("--video_file=")[1]
