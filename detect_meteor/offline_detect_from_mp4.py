@@ -27,6 +27,7 @@ PROCESS_START_TIME = '0700'
 PROCESS_END_TIME = '2200'
 IP_ADDR = ""
 PYTHON_BIN = "python"
+temp_time_elapse_video_dir = os.path.join(os.getcwd(), "temp")
 
 def get_local_ip():
     ip = ""
@@ -292,14 +293,18 @@ def read_one_video(full_path):
 
 def convert_avi_to_264(full_name):
     print("convert avi to h264")
-    h264_name = full_name.replace(".avi", "") + ".mp4"
+    name = os.path.basename(full_name)
+    h264_name = name.replace(".avi", "") + ".mp4"
+    h264_name = os.path.join(input_file_base_path, h264_name)
     if os.path.exists(h264_name):
         os.remove(h264_name)
-    cmd = r'''ffmpeg -i "{0}"  -c:v h264 -b:v 8000k -strict -2  "{1}"'''.format(
+    cmd = r'''ffmpeg -i "{0}"  -c:v h264 -b:v 8000k -strict -2  "{1}" 2>&1'''.format(
         full_name, h264_name)
     print("cmd: ", cmd)
-    os.system(cmd)
+    ret = os.popen(cmd).read()
+    print("ffmpeg output:\n" + ret)
     os.remove(full_name)
+    assert os.path.exists(h264_name)
 
 frames_elapse = []
 def process_time_elapse_one_frame(data_obj):
@@ -308,7 +313,9 @@ def process_time_elapse_one_frame(data_obj):
         base_dir = os.path.dirname(data_obj['full_path'])
         name = os.path.basename(data_obj['full_path']).replace(".mp4", "")
         name += '.120x.avi'
-        fn = os.path.join(base_dir, name)
+        if not os.path.exists(temp_time_elapse_video_dir):
+            os.makedirs(temp_time_elapse_video_dir)
+        fn = os.path.join(temp_time_elapse_video_dir, name)
         data_obj['elapse_120x_fn'] = fn
         if os.path.exists(fn):
             os.remove(fn)
@@ -317,9 +324,9 @@ def process_time_elapse_one_frame(data_obj):
             data_obj['fps'], 
             (data_obj['width'],data_obj['height']))
         data_obj['elapse_120x'] = videoWriter
-    if data_obj['frame_idx'] % 120 < 20:
+    if data_obj['frame_idx'] % 120 < 3:
         frames_elapse.append(data_obj['frame'])
-    if data_obj['frame_idx'] % 120 == 20:
+    if data_obj['frame_idx'] % 120 == 3:
         m = get_recent_avg_img(frames_elapse)
         frames_elapse = []
         data_obj['elapse_120x'].write(m)
