@@ -40,8 +40,17 @@ def get_local_ip():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('8.8.8.8', 80))
         ip = s.getsockname()[0]
+    except:
+        return None
     finally:
         s.close()
+    return ip
+
+def wait_get_local_ip():
+    ip = get_local_ip():
+    while ip == None:
+        time.sleep(10)
+        ip = get_local_ip()
     return ip
 
 def decode_fourcc(cc):
@@ -775,7 +784,7 @@ def test_should_process():
 
 if __name__ == "__main__":
     assert True == check_ffmpeg()
-    IP_ADDR = get_local_ip()
+    IP_ADDR = wait_get_local_ip()
     print("IP: ", IP_ADDR)
     parse_config()
     if '--debug' in sys.argv:
