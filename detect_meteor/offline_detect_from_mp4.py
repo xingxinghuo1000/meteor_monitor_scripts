@@ -47,7 +47,7 @@ def get_local_ip():
     return ip
 
 def wait_get_local_ip():
-    ip = get_local_ip():
+    ip = get_local_ip()
     while ip == None:
         time.sleep(10)
         ip = get_local_ip()
