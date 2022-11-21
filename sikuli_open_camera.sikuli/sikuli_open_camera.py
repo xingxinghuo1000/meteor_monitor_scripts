@@ -127,8 +127,8 @@ def start_record():
         
 def try_click_stop_button():
     myPrint("try_click_stop_button")
-    if exists(Pattern("1652015879422.png").similar(0.81)):
-        click(Pattern("1652015879422.png").similar(0.81))
+    if exists(Pattern("1667053209713.png").similar(0.81)):
+        click(Pattern("1667053209713.png").similar(0.81))
         myPrint("stop done, then return True")
         click(Pattern("1653186710812.png").targetOffset(-36,-32))
         myPrint("sleep 2")

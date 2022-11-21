@@ -15,7 +15,7 @@ import numpy as np
 EXECUTOR_NUM = 4
 
 DEBUG = 0
-split_limit = 100
+split_limit = 30
 area_threh = 5
 thres1 = 20
 prefix_video_sec = 1.0 # when cut video, keep 1 seconds before meteor
@@ -51,6 +51,8 @@ def wait_get_local_ip():
     while ip == None:
         time.sleep(10)
         ip = get_local_ip()
+    if ip == None:
+        ip = str(uuid.uuid4())
     return ip
 
 def decode_fourcc(cc):
