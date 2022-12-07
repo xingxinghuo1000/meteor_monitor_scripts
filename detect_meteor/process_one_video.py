@@ -30,9 +30,10 @@ def decode_fourcc(cc):
 
 
 img_mask = None
+has_mask = 0
 has_load_img_mask = 0
 def mask_img(origin_path, img, w, h):
-    global img_mask, has_load_img_mask
+    global img_mask, has_load_img_mask, has_mask
     if has_load_img_mask == 0:
         base_dir = os.path.dirname(origin_path)
         mask_file1 = os.path.join(base_dir, 'mask-1280-720.bmp')
@@ -49,16 +50,23 @@ def mask_img(origin_path, img, w, h):
             store_lib.fetch_file_from_input_path(mask_file1, tmp_bmp_file)
             assert os.path.exists(tmp_bmp_file)
             img_mask = cv2.imread(tmp_bmp_file)
+            has_mask = 1
             util.safe_os_remove(tmp_bmp_file)
+            if w != 1280:
+                img_mask = cv2.resize(img_mask, (w,h))
         else: 
             if os.path.exists(mask_file2):
                 print("find image mask file2, path: ", mask_file2)
                 img_mask = cv2.imread(mask_file2)
-        if w != 1280:
-            img_mask = cv2.resize(img_mask, (w,h))
+                has_mask = 1
+                if w != 1280:
+                    img_mask = cv2.resize(img_mask, (w,h))
         has_load_img_mask = 1
-    ret_img = cv2.bitwise_and(img, img_mask)
-    return ret_img
+    if has_mask == 1:
+        ret_img = cv2.bitwise_and(img, img_mask)
+        return ret_img
+    else:
+        return img
 
 def convert_img(frame):
     resized = cv2.resize(frame,(512,512))
