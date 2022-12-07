@@ -511,7 +511,6 @@ def process_one_video(full_path):
     t1 = time.time()
     ret = read_one_video(local_file)
     t2 = time.time()
-    ret['fetch_time'] = int(t22 - t11)
     index = ret['index']
     frame_count = ret['frame_count']
     fps = ret['fps']
@@ -531,8 +530,9 @@ def process_one_video(full_path):
     d["IP"] = cfg['IP_ADDR']
     d["index"] = index
     d["process speed fps"] = process_speed
-    d['process time second'] = int(time_use)
-    d['video length second'] = int(time_sec)
+    ret['fetch_time_sec'] = int(t22 - t11)
+    d['analyze_video_time_sec'] = int(time_use)
+    d['video_length_sec'] = int(time_sec)
     d['filter_info_list'] = filter_info_list
     text = json.dumps(d, ensure_ascii=False, indent=2)
     write_analyze(full_path, text)
