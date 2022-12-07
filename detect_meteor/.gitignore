@@ -1,7 +1,9 @@
 *.log
 .config
 __pycache__
+.pytest_cache
 *.pyc
 temp
 back.jpg
 one.jpg
+
