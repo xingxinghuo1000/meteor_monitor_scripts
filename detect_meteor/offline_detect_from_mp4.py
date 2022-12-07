@@ -46,7 +46,6 @@ def run_it():
 
 def process_from_queue(q):
     assert cfg['PYTHON_BIN'] != ''
-    assert os.path.exists(cfg['PYTHON_BIN'])
     while 1:
         full_path = q.get()
         if full_path == "poison":
@@ -92,7 +91,10 @@ def del_old_lock_files(lock_list):
             try:
                 b1 = store_lib.read_file_from_input_path(lock)
                 print("b1: ", b1)
-                text = b1.decode("utf-8")
+                if type(b1) == type("abc"):
+                    text = b1
+                else:
+                    text = b1.decode("utf-8")
                 print("lock content: ", text)
                 d = json.loads(text)
                 if 'createTime' in d:
@@ -206,7 +208,10 @@ def try_lock_file(full_path):
             str_read = ""
             try:
                 temp_bytes = store_lib.read_file_from_input_path(lockfile)
-                str_read = temp_bytes.decode("utf-8")
+                if type(temp_bytes) == type("abc"):
+                    str_read = temp_bytes
+                else:
+                    str_read = temp_bytes.decode("utf-8")
                 str_read = str_read.strip("\r\n").strip()
             except:
                 traceback.print_exc()
@@ -264,8 +269,16 @@ def test_should_process():
     assert False == should_process_now('2300')
     assert False == should_process_now('2359')
 
+def clean_temp_dir():
+    if os.path.exists("temp"):
+        for f in os.listdir("temp"):
+            ff = os.path.join("temp", f)
+            print("try to remove temp file: ", f)
+            util.safe_os_remove(ff)
+
 if __name__ == "__main__":
     assert True == check_ffmpeg()
+    clean_temp_dir()
     if '--debug' in sys.argv:
         cfg['DEBUG'] = 1
     for arg in sys.argv:
@@ -294,8 +307,10 @@ if __name__ == "__main__":
                 print("Error when batch_process")
                 traceback.print_exc()
             print("after process, sleep 60")
+            clean_temp_dir()
             time.sleep(60)
         else:
             print("not now, then sleep 60")
+            clean_temp_dir()
             time.sleep(60)
 
