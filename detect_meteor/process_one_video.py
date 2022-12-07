@@ -6,6 +6,7 @@ import json
 import traceback
 import numpy as np
 import util
+import imageio
 
 import parse_config
 import store_lib
@@ -30,19 +31,28 @@ def decode_fourcc(cc):
 
 img_mask = None
 has_load_img_mask = 0
-def mask_img(full_path, img, w, h):
+def mask_img(origin_path, img, w, h):
     global img_mask, has_load_img_mask
     if has_load_img_mask == 0:
-        base_dir = os.path.dirname(full_path)
+        base_dir = os.path.dirname(origin_path)
         mask_file1 = os.path.join(base_dir, 'mask-1280-720.bmp')
         mask_file2 = 'mask-1280-720.bmp'
-        
-        if not os.path.exists(mask_file1) and not os.path.exists(mask_file1):
+        print("try to find mask file1: ", mask_file1) 
+        print("try to find mask file2: ", mask_file2) 
+        if not store_lib.input_path_file_exists(mask_file1) and not os.path.exists(mask_file1):
+            print("can not find mask file")
+            has_load_img_mask = 1
             return img
-        if os.path.exists(mask_file1):
-            img_mask = cv2.imread(mask_file1)
+        if store_lib.input_path_file_exists(mask_file1):
+            print("find image mask, path: ", mask_file1)
+            tmp_bmp_file = store_lib.gen_local_temp_file() + ".bmp"
+            store_lib.fetch_file_from_input_path(mask_file1, tmp_bmp_file)
+            assert os.path.exists(tmp_bmp_file)
+            img_mask = cv2.imread(tmp_bmp_file)
+            util.safe_os_remove(tmp_bmp_file)
         else: 
             if os.path.exists(mask_file2):
+                print("find image mask, path: ", mask_file2)
                 img_mask = cv2.imread(mask_file2)
         if w != 1280:
             img_mask = cv2.resize(img_mask, (w,h))
@@ -97,6 +107,7 @@ def process_one_frame(data_obj):
     frame = data_obj["frame"]
     filter_info_list = data_obj["filter_info_list"]
     full_path = data_obj['full_path']
+    origin_path = data_obj['origin_path']
     # got Finish signal, then break
     if ret == False:
         return
@@ -108,13 +119,15 @@ def process_one_frame(data_obj):
             data_obj['t1'] = t2
         print("frame count: ", cnt, '  total: ', frame_count)
     match = 0
+    match_rec = None
     
-    m_img = mask_img(full_path, frame, width, height)
+    m_img = mask_img(origin_path, frame, width, height)
     #cv2.imshow("masked_image", m_img)
     # get background image, every 600 frames
     # 对帧进行预处理，先转灰度图，再进行高斯滤波。
     # 用高斯滤波进行模糊处理，进行处理的原因：每个输入的视频都会因自然震动、光照变化或者摄像头本身等原因而产生噪声。对噪声进行平滑是为了避免在运动和跟踪时将其检测出来。
     gray_lwpCV, resized_frame = convert_img(m_img)
+
     # save recent 5 frames, for further purpose
     save_recent_frames(gray_lwpCV, last_5_frame)
     if cnt % split_limit == 0:
@@ -169,14 +182,22 @@ def process_one_frame(data_obj):
                 }
                 filter_info_list.append(item)
                 continue
-            cv2.rectangle(resized_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 2)
             print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
 
             match = 1
+            match_rec = (x,y,w,h)
         if match == 1:
             if cfg['DEBUG']:
                 key = cv2.waitKey(200)
             data_obj['index'].append(cnt)
+            data_obj['index_with_rec'].append({"index": cnt, "rec": match_rec})
+            tmp_jpg = store_lib.gen_local_temp_file() + ".jpg"
+            cv2.imwrite(tmp_jpg, resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
+            gif_frame = imageio.imread(tmp_jpg)
+            data_obj['diff_frames_by_index'][str(cnt)] = gif_frame
+            print("save diff frame, current total frame num: ", len(data_obj['diff_frames_by_index']), " cur idx: ", cnt)
+            util.safe_os_remove(tmp_jpg)
     if cfg['DEBUG']:
         cv2.imshow("frame: ", resized_frame)
     if cfg['DEBUG']:
@@ -189,8 +210,8 @@ def process_one_frame(data_obj):
 
 
 
-def read_one_video(full_path):
-    vid_capture = cv2.VideoCapture(full_path)
+def read_one_video(local_video_path, origin_path):
+    vid_capture = cv2.VideoCapture(local_video_path)
     if (vid_capture.isOpened() == False):
         print("Error opening the video file")
         vid_capture.release()
@@ -208,9 +229,13 @@ def read_one_video(full_path):
     time_sec = frame_count / fps
     print("time total seconds: ", time_sec)
     index = []
+    index_with_rec = []
+    diff_frames_by_index = {}
     data_obj = {
         "frame_idx": 0,
         "index": index,
+        "index_with_rec": index_with_rec,
+        "diff_frames_by_index": diff_frames_by_index,
         "width": width,
         "height": height,
         "frame_count": frame_count,
@@ -220,7 +245,8 @@ def read_one_video(full_path):
         "last_cnt": 0,
         "t1": time.time(),
         "filter_info_list": [],
-        "full_path": full_path,
+        "full_path": local_video_path,
+        "origin_path": origin_path,
     }
     while 1:
         ret, frame = read_one_frame(vid_capture)
@@ -241,19 +267,19 @@ def read_one_video(full_path):
 
 
 
-def convert_avi_to_264(full_name):
+def convert_avi_to_264(avi_file):
     print("convert avi to h264")
-    name = os.path.basename(full_name)
+    name = os.path.basename(avi_file)
     h264_basename = name.replace(".avi", "") + ".mp4"
     local_file = os.path.join("temp", h264_basename)
     if os.path.exists(local_file):
         util.safe_os_remove(local_file)
     cmd = r'''ffmpeg -i "{0}"  -c:v h264 -b:v 8000k -strict -2  "{1}" 2>&1'''.format(
-        full_name, local_file)
+        avi_file, local_file)
     print("cmd: ", cmd)
     ret = os.popen(cmd).read()
     print("ffmpeg output:\n" + ret)
-    util.safe_os_remove(full_name)
+    util.safe_os_remove(avi_file)
     assert os.path.exists(local_file)
     remote_file = os.path.join(cfg['input_file_base_path'], h264_basename)
     store_lib.store_file_to_input_path(local_file, remote_file)
@@ -263,7 +289,6 @@ frames_elapse = []
 def process_time_elapse_one_frame(data_obj):
     global frames_elapse
     if 'elapse_120x' not in data_obj:
-        base_dir = os.path.dirname(data_obj['full_path'])
         name = os.path.basename(data_obj['full_path']).replace(".mp4", "")
         name += '.120x.avi'
         if not os.path.exists(temp_time_elapse_video_dir):
@@ -303,8 +328,11 @@ def test_seconds_to_hum_readable():
 
 
 
-def ffmpg_split(start_time, end_time, input_file):
+def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index):
     temp_dir = "temp"
+    assert os.path.exists(temp_dir)
+
+    # generate final splitted meteor video
     t = get_record_time_from_video_name(input_file, start_time)
     date = t.strftime("%Y%m%d")
     out_file = t.strftime("%Y%m%d_%H%M%S.mp4")
@@ -322,6 +350,19 @@ def ffmpg_split(start_time, end_time, input_file):
     # upload splitted video to remote output path
     store_lib.store_file_to_output_path(local_file, remote_file)
     util.safe_os_remove(local_file)
+
+    # generate GIF file for debug
+    gif_file_name = t.strftime("%Y%m%d_%H%M%S_diff.gif")
+    local_gif_file_path = os.path.join(temp_dir, gif_file_name)
+    remote_gif_file_path = os.path.join(remote_dir, gif_file_name)
+    temp_frames = []
+    for idx in range(segment[0], segment[1]):
+        print("try to find diff frames , idx: ", idx)
+        if str(idx) in diff_frames_by_index:
+            temp_frames.append(diff_frames_by_index[str(idx)])
+    imageio.mimsave(local_gif_file_path, temp_frames, fps=3)
+    store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
+    util.safe_os_remove(local_gif_file_path)
 
 def get_record_time_from_video_name(full_path, shift_time):
     basename = os.path.basename(full_path)
@@ -481,7 +522,7 @@ def calc_split_range(index, frame_count, fps, time_sec):
         begin_time, duration = calc_begin_time_and_duration(seg, fps)
         begin_time_hum = seconds_to_hum_readable(begin_time)
         duration_hum = seconds_to_hum_readable(duration)
-        param_list.append([begin_time_hum, duration_hum])
+        param_list.append([begin_time_hum, duration_hum, seg])
     return param_list
 
 
@@ -509,7 +550,7 @@ def process_one_video(full_path):
     t22 = time.time() 
     local_file = get_local_path(full_path)
     t1 = time.time()
-    ret = read_one_video(local_file)
+    ret = read_one_video(local_file, full_path)
     t2 = time.time()
     index = ret['index']
     frame_count = ret['frame_count']
@@ -521,7 +562,7 @@ def process_one_video(full_path):
         param_list = calc_split_range(index, frame_count, fps, time_sec)
         if len(param_list) > 0:
             for param in param_list:
-                ffmpg_split(param[0], param[1], local_file)
+                ffmpg_split(param[0], param[1], param[2], local_file, ret["diff_frames_by_index"])
     print("process time: ", int(t2-t1))
     time_use = t2-t1
     process_speed = int(frame_count/time_use)
@@ -529,7 +570,8 @@ def process_one_video(full_path):
     d = {}
     d["IP"] = cfg['IP_ADDR']
     d["index"] = index
-    d["process speed fps"] = process_speed
+    d["index_with_rec"] = ret['index_with_rec']
+    d["process_speed_fps"] = process_speed
     d['fetch_time_sec'] = int(t22 - t11)
     d['analyze_video_time_sec'] = int(time_use)
     d['video_length_sec'] = int(time_sec)
