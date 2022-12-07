@@ -530,7 +530,7 @@ def process_one_video(full_path):
     d["IP"] = cfg['IP_ADDR']
     d["index"] = index
     d["process speed fps"] = process_speed
-    ret['fetch_time_sec'] = int(t22 - t11)
+    d['fetch_time_sec'] = int(t22 - t11)
     d['analyze_video_time_sec'] = int(time_use)
     d['video_length_sec'] = int(time_sec)
     d['filter_info_list'] = filter_info_list
