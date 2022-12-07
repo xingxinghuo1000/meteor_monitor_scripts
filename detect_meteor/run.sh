@@ -10,6 +10,4 @@ if [ $CNT -eq 0 ]; then
     /home/pi/py37env/bin/python  offline_detect_from_mp4.py > run.log 2>&1 &
 fi
 
-# delete old temp files
-find ./temp -type f -mtime +1 | xargs rm -f 
 
