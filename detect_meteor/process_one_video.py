@@ -39,12 +39,12 @@ def mask_img(origin_path, img, w, h):
         mask_file2 = 'mask-1280-720.bmp'
         print("try to find mask file1: ", mask_file1) 
         print("try to find mask file2: ", mask_file2) 
-        if not store_lib.input_path_file_exists(mask_file1) and not os.path.exists(mask_file1):
+        if not store_lib.input_path_file_exists(mask_file1) and not os.path.exists(mask_file2):
             print("can not find mask file")
             has_load_img_mask = 1
             return img
         if store_lib.input_path_file_exists(mask_file1):
-            print("find image mask, path: ", mask_file1)
+            print("find image mask file1, path: ", mask_file1)
             tmp_bmp_file = store_lib.gen_local_temp_file() + ".bmp"
             store_lib.fetch_file_from_input_path(mask_file1, tmp_bmp_file)
             assert os.path.exists(tmp_bmp_file)
@@ -52,7 +52,7 @@ def mask_img(origin_path, img, w, h):
             util.safe_os_remove(tmp_bmp_file)
         else: 
             if os.path.exists(mask_file2):
-                print("find image mask, path: ", mask_file2)
+                print("find image mask file2, path: ", mask_file2)
                 img_mask = cv2.imread(mask_file2)
         if w != 1280:
             img_mask = cv2.resize(img_mask, (w,h))
