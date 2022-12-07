@@ -9,6 +9,7 @@ import queue
 import uuid
 import socket
 import json
+import util
 import parse_config
 import store_lib
 import process_one_video as pov
