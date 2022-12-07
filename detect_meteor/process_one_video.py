@@ -192,12 +192,14 @@ def process_one_frame(data_obj):
                 key = cv2.waitKey(200)
             data_obj['index'].append(cnt)
             data_obj['index_with_rec'].append({"index": cnt, "rec": match_rec})
-            tmp_jpg = store_lib.gen_local_temp_file() + ".jpg"
-            cv2.imwrite(tmp_jpg, resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
-            gif_frame = imageio.imread(tmp_jpg)
-            data_obj['diff_frames_by_index'][str(cnt)] = gif_frame
-            print("save diff frame, current total frame num: ", len(data_obj['diff_frames_by_index']), " cur idx: ", cnt)
-            util.safe_os_remove(tmp_jpg)
+            # save diff frame for debug
+            if len(data_obj['diff_frames_by_index']) < 15:
+                tmp_jpg = store_lib.gen_local_temp_file() + ".jpg"
+                cv2.imwrite(tmp_jpg, resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
+                gif_frame = imageio.imread(tmp_jpg)
+                data_obj['diff_frames_by_index'][str(cnt)] = gif_frame
+                print("save diff frame, current total frame num: ", len(data_obj['diff_frames_by_index']), " cur idx: ", cnt)
+                util.safe_os_remove(tmp_jpg)
     if cfg['DEBUG']:
         cv2.imshow("frame: ", resized_frame)
     if cfg['DEBUG']:
