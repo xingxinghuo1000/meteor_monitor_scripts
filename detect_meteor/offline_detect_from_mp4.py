@@ -123,7 +123,7 @@ def filter_by_done_file(video_list, orig_list):
     temp_list_1 = []
     for x in video_list:
         analyze_file = x + '.analyze'
-        print("check analyze file is exists: " + analyze_file)
+        #print("check analyze file is exists: " + analyze_file)
         if analyze_file not in orig_list:
             temp_list_1.append(x)
     if len(temp_list_1) == 0:
@@ -132,7 +132,7 @@ def filter_by_done_file(video_list, orig_list):
     temp_list_2 = []
     for x in temp_list_1:
         done_file = x + '.done'
-        print("check done file is exists: " + done_file)
+        #print("check done file is exists: " + done_file)
         if done_file in orig_list:
             temp_list_2.append(x)
     if len(temp_list_2) == 0:
