@@ -2,3 +2,6 @@
 .config
 __pycache__
 *.pyc
+temp
+back.jpg
+one.jpg
