@@ -255,7 +255,7 @@ def convert_avi_to_264(full_name):
     print("ffmpeg output:\n" + ret)
     util.safe_os_remove(full_name)
     assert os.path.exists(local_file)
-    remote_file = os.path.join(cfg['base_output_path'], h264_basename)
+    remote_file = os.path.join(cfg['input_file_base_path'], h264_basename)
     store_lib.store_file_to_input_path(local_file, remote_file)
     util.safe_os_remove(local_file)
 
