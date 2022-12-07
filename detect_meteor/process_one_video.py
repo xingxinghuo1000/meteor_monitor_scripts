@@ -141,8 +141,12 @@ def process_one_frame(data_obj):
     if cnt % split_limit == 0:
         print("set background")
         data_obj['background'] = get_recent_avg_img(last_5_frame)
-        cv2.imwrite("back.jpg", data_obj['background'], [int(cv2.IMWRITE_JPEG_QUALITY),100])
-        cv2.imwrite("one.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
+
+        if cfg['DEBUG']:
+            cv2.imwrite("back.jpg", data_obj['background'], [int(cv2.IMWRITE_JPEG_QUALITY),100])
+
+        if cfg['DEBUG']:
+            cv2.imwrite("one.jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
     else:
         # 对于每个从背景之后读取的帧都会计算其与北京之间的差异，并得到一个差分图（different map）
         diff = cv2.absdiff(background, gray_lwpCV)
