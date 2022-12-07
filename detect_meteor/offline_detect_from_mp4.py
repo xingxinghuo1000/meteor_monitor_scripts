@@ -70,8 +70,8 @@ def process_from_queue(q):
             #pov.process_one_video(full_path)
             cmd = r'''{0} offline_detect_from_mp4.py --video_file="{1}" 2>&1 '''.format(cfg['PYTHON_BIN'], full_path)
             print("run cmd: ", cmd)
-            #text = os.popen(cmd).read()
-            #print("process ret: ", text)
+            text = os.popen(cmd).read()
+            print("process ret: ", text)
             # write analyze file, and remove lock file
             try:
                 print("try to remove lock file")
