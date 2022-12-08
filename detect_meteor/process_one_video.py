@@ -527,16 +527,19 @@ def calc_begin_time_and_duration(segment, fps):
         begin_time = 0
     return begin_time, duration
 
-def calc_split_range(index, frame_count, fps, time_sec):
+def calc_split_range(index, frame_count, fps, time_sec, data_obj):
     l = prefix_video_sec
     # first find multiple segment
     segments = get_segments_from_index(index)
     # then merge near segments
     new_segments = merge_segments(segments, fps)
     param_list = []
+    data_obj['filter_segments'] = []
     for seg in new_segments:
         if seg[0] == seg[1]:
-            print("[filter segment] reason: single diff frame. seg: ", seg)
+            msg = "[filter segment] reason: single diff frame. seg: " + str(seg)
+            print(msg)
+            data_obj['filter_segments'].append(msg)
             continue
         begin_time, duration = calc_begin_time_and_duration(seg, fps)
         begin_time_hum = seconds_to_hum_readable(begin_time)
@@ -580,7 +583,7 @@ def process_one_video(full_path):
     filter_info_list = ret['filter_info_list']
     if len(index) > 0 and cfg['DEBUG'] == 0:
         process_speed = int(frame_count / (t2-t1))
-        param_list = calc_split_range(index, frame_count, fps, time_sec)
+        param_list = calc_split_range(index, frame_count, fps, time_sec, ret)
         if len(param_list) > 0:
             for param in param_list:
                 ffmpg_split(param[0], param[1], param[2], local_file, ret["diff_frames_by_index"])
@@ -592,6 +595,8 @@ def process_one_video(full_path):
     d["IP"] = cfg['IP_ADDR']
     d["index"] = index
     d["index_with_rec"] = ret['index_with_rec']
+    if 'filter_segments' in ret:
+        d['filter_segments'] = ret['filter_segments']
     d["process_speed_fps"] = process_speed
     d['fetch_time_sec'] = int(t22 - t11)
     d['analyze_video_time_sec'] = int(time_use)
