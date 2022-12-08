@@ -366,11 +366,12 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
     util.safe_os_remove(local_file)
 
     # generate GIF file for debug
+    print("generate gif file.  segment: ", segment)
     gif_file_name = t.strftime("%Y%m%d_%H%M%S_diff.gif")
     local_gif_file_path = os.path.join(temp_dir, gif_file_name)
     remote_gif_file_path = os.path.join(remote_dir, gif_file_name)
     temp_frames = []
-    for idx in range(segment[0], segment[1]):
+    for idx in range(segment[0], segment[1] + 1):
         print("try to find diff frames , idx: ", idx)
         if str(idx) in diff_frames_by_index:
             temp_frames.append(diff_frames_by_index[str(idx)])
