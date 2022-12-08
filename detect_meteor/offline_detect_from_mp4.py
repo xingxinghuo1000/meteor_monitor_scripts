@@ -271,11 +271,17 @@ def test_should_process():
     assert False == should_process_now('2359')
 
 def clean_temp_dir():
+    cur_time = time.time()
     if os.path.exists("temp"):
+        print("try to clean temp dir")
         for f in os.listdir("temp"):
             ff = os.path.join("temp", f)
-            print("try to remove temp file: ", f)
-            util.safe_os_remove(ff)
+            t = os.path.getmtime(ff)
+            diff = int(cur_time - t)
+            print("(current time) - (temp time create time) = ", diff)
+            if diff > 7200:
+                print("try to remove temp file: ", f)
+                util.safe_os_remove(ff)
 
 if __name__ == "__main__":
     assert True == check_ffmpeg()
@@ -308,10 +314,8 @@ if __name__ == "__main__":
                 print("Error when batch_process")
                 traceback.print_exc()
             print("after process, sleep 60")
-            clean_temp_dir()
             time.sleep(60)
         else:
             print("not now, then sleep 60")
-            clean_temp_dir()
             time.sleep(60)
 

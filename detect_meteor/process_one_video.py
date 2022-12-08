@@ -229,7 +229,7 @@ def read_one_video(local_video_path, origin_path):
     if (vid_capture.isOpened() == False):
         print("Error opening the video file")
         vid_capture.release()
-        return [], -1, -1, -1
+        return None
     width = int(vid_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     print('video width: ', width)
     height = int(vid_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -321,6 +321,7 @@ def process_time_elapse_one_frame(data_obj):
     if data_obj['frame_idx'] % 120 == 3:
         m = get_recent_avg_img(frames_elapse)
         frames_elapse = []
+        print("write one frame fox 120x elapse video, frame_idx:", data_obj['frame_idx'])
         data_obj['elapse_120x'].write(m)
 
 def seconds_to_hum_readable(secs):
@@ -534,6 +535,9 @@ def calc_split_range(index, frame_count, fps, time_sec):
     new_segments = merge_segments(segments, fps)
     param_list = []
     for seg in new_segments:
+        if seg[0] == seg[1]:
+            print("[filter segment] reason: single diff frame. seg: ", seg)
+            continue
         begin_time, duration = calc_begin_time_and_duration(seg, fps)
         begin_time_hum = seconds_to_hum_readable(begin_time)
         duration_hum = seconds_to_hum_readable(duration)
@@ -567,6 +571,8 @@ def process_one_video(full_path):
     t1 = time.time()
     ret = read_one_video(local_file, full_path)
     t2 = time.time()
+    if ret == None:
+        return
     index = ret['index']
     frame_count = ret['frame_count']
     fps = ret['fps']
