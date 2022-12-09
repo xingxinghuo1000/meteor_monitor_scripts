@@ -13,6 +13,7 @@ import store_lib
 
 cfg = parse_config.parse()
 
+MAX_DIFF_FRAME_CNT = 100
 split_limit = 30
 area_threh = 5
 thres1 = 20
@@ -205,7 +206,7 @@ def process_one_frame(data_obj):
             data_obj['index'].append(cnt)
             data_obj['index_with_rec'].append({"index": cnt, "rec": match_rec})
             # save diff frame for debug
-            if len(data_obj['diff_frames_by_index']) < 15:
+            if len(data_obj['diff_frames_by_index']) < MAX_DIFF_FRAME_CNT:
                 tmp_jpg = store_lib.gen_local_temp_file() + ".jpg"
                 cv2.imwrite(tmp_jpg, resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
                 gif_frame = imageio.imread(tmp_jpg)
@@ -376,9 +377,10 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
         print("try to find diff frames , idx: ", idx)
         if str(idx) in diff_frames_by_index:
             temp_frames.append(diff_frames_by_index[str(idx)])
-    imageio.mimsave(local_gif_file_path, temp_frames, fps=3)
-    store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
-    util.safe_os_remove(local_gif_file_path)
+    if len(temp_frames) > 0:
+        imageio.mimsave(local_gif_file_path, temp_frames, fps=3)
+        store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
+        util.safe_os_remove(local_gif_file_path)
 
 def get_record_time_from_video_name(full_path, shift_time):
     basename = os.path.basename(full_path)
