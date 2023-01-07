@@ -20,8 +20,8 @@ def read_sunset_sunrise_time():
     idx = int(current_month) - 1
     s =  get_sunrise_time(idx)
     myPrint("s: " + str(s))
-    s0 = datetime.datetime.strptime(s[1], "%H%M") + datetime.timedelta(seconds=3600)
-    s1 = datetime.datetime.strptime(s[0], "%H%M") - datetime.timedelta(seconds=1800)
+    s0 = datetime.datetime.strptime(s[1], "%H%M") + datetime.timedelta(seconds=7200)
+    s1 = datetime.datetime.strptime(s[0], "%H%M") - datetime.timedelta(seconds=3600)
     START_TIME = s0.strftime("%H%M")
     END_TIME = s1.strftime("%H%M")
     myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
