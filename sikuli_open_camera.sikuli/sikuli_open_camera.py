@@ -10,7 +10,7 @@ import traceback
 RECORD_TIME = 200
 START_TIME = '2300'
 END_TIME = '0500'
-MAX_VIDEO_SUM_SIZE = 45 * 1024 * 1024 * 1024
+MAX_VIDEO_SUM_SIZE = 10 * 1024 * 1024 * 1024
 video_local_dir = r'D:\video\camera'
 
 def read_sunset_sunrise_time():

@@ -4,8 +4,8 @@ import time
 import traceback
 
 video_path = r'D:\video\camera'
-target_dir = r'U:\meteor_monitor\origin'
-MAX_TARGET_VIDEO_SIZE = 60 * 1024 * 1024 * 1024
+target_dir = r'D:\meteor_monitor\origin'
+MAX_TARGET_VIDEO_SIZE = 40 * 1024 * 1024 * 1024
 
 
 def delete_old_video():
@@ -18,17 +18,19 @@ def delete_old_video():
     print("sum size      : ", sum_size)
     print("sum size limit: ", MAX_TARGET_VIDEO_SIZE)
     while sum_size > MAX_TARGET_VIDEO_SIZE:
-        os.remove(os.path.join(target_dir, videos[0]))
-        done_file = os.path.join(target_dir, videos[0] + '.done')
+        video_path = os.path.join(target_dir, videos[0])
+        print("try to remove path:" + video_path)
+        os.remove(video_path)
+        done_file = video_path + '.done'
         if os.path.exists(done_file):
             os.remove(done_file)
-        lock_file = os.path.join(target_dir, videos[0] + '.lock')
+        lock_file = video_path + '.lock'
         if os.path.exists(lock_file):
             os.remove(lock_file)
-        analyze_file = os.path.join(target_dir, videos[0] + '.analyze')
+        analyze_file = video_path + '.analyze'
         if os.path.exists(analyze_file):
             os.remove(analyze_file)
-        time_elapse_file =  os.path.join(target_dir, videos[0].replace(".mp4", "")  + '.120x.mp4')
+        time_elapse_file = video_path.replace(".mp4", "")  + '.120x.mp4'
         if os.path.exists(time_elapse_file):
             os.remove(time_elapse_file)
         videos = os.listdir(target_dir)
