@@ -51,4 +51,6 @@ def test_check_ffmpeg():
 
 
 
+if __name__ == "__main__":
+    get_device_list()
 
