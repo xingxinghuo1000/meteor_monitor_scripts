@@ -2,4 +2,6 @@ imageio
 opencv-python
 numpy
 ftplib
+psutil
+logzero
 
