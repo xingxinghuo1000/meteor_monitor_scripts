@@ -54,6 +54,7 @@ cfg = {
     'input_file_user': 'pi',
     'input_file_passwd': '',
     'input_file_base_path': r'w:\meteor_monitor\origin',
+    'CAPTURE_VIDEO_PATH': r'w:\meteor_monit\origin',
     'IP_ADDR': '',
     'PYTHON_BIN': 'python',
     'LOCK_STR': '',
