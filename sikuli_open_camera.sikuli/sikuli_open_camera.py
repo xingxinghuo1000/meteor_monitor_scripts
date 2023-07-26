@@ -10,7 +10,7 @@ import traceback
 RECORD_TIME = 200
 START_TIME = '2300'
 END_TIME = '0500'
-MAX_VIDEO_SUM_SIZE = 45 * 1024 * 1024 * 1024
+MAX_VIDEO_SUM_SIZE = 10 * 1024 * 1024 * 1024
 video_local_dir = r'D:\video\camera'
 
 def read_sunset_sunrise_time():
@@ -20,8 +20,8 @@ def read_sunset_sunrise_time():
     idx = int(current_month) - 1
     s =  get_sunrise_time(idx)
     myPrint("s: " + str(s))
-    s0 = datetime.datetime.strptime(s[1], "%H%M") + datetime.timedelta(seconds=3600)
-    s1 = datetime.datetime.strptime(s[0], "%H%M") - datetime.timedelta(seconds=1800)
+    s0 = datetime.datetime.strptime(s[1], "%H%M") + datetime.timedelta(seconds=7200)
+    s1 = datetime.datetime.strptime(s[0], "%H%M") - datetime.timedelta(seconds=3600)
     START_TIME = s0.strftime("%H%M")
     END_TIME = s1.strftime("%H%M")
     myPrint("START_TIME: " + START_TIME + "  END_TIME: " + END_TIME)
