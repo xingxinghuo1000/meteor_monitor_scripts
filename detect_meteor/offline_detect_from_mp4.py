@@ -268,8 +268,8 @@ def should_process_now():
     b = black_time_ss.strftime("%H:%M")
     logger.info("now: " + n_str)
     logger.info("a: " + a + "     b: " + b)
-    is_night = is_night(n_str, a, b)
-    if is_night:
+    is_ni = is_night(n_str, a, b)
+    if is_ni:
         return False
     else:
         # is in daylight
