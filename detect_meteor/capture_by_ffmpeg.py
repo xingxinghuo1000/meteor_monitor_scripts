@@ -63,6 +63,41 @@ def is_hit_sum_size_limit():
         return False
 
 
+def delete_old_video():
+    target_dir = cfg['CAPTURE_VIDEO_PATH']
+    videos = os.listdir(target_dir)
+    if len(videos) == 0:
+        return
+    videos = [x for x in videos if x.endswith('.mp4')]
+    videos.sort()
+    sum_size = sum_files_size(videos)
+    print("sum size      : ", sum_size)
+    print("sum size limit: ", int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']))
+    while sum_size > int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']):
+        video_path = os.path.join(target_dir, videos[0])
+        print("try to remove path:" + video_path)
+        os.remove(video_path)
+        done_file = video_path + '.done'
+        if os.path.exists(done_file):
+            os.remove(done_file)
+        lock_file = video_path + '.lock'
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
+        analyze_file = video_path + '.analyze'
+        if os.path.exists(analyze_file):
+            os.remove(analyze_file)
+        time_elapse_file = video_path.replace(".mp4", "")  + '.120x.mp4'
+        if os.path.exists(time_elapse_file):
+            os.remove(time_elapse_file)
+        videos = os.listdir(target_dir)
+        videos = [x for x in videos if x.endswith('.mp4')]
+        videos.sort()
+        sum_size = sum_files_size(videos)
+        print("sum size      : ", sum_size)
+        print("sum size limit: ", MAX_TARGET_VIDEO_SIZE)
+
+
+
 
 def show_video_format_support():
     assert device_name != None

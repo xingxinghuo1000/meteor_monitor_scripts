@@ -324,6 +324,9 @@ def clean_temp_dir():
                 logger.info("try to remove temp file: "+f)
                 util.safe_os_remove(ff)
 
+
+
+
 if __name__ == "__main__":
     assert True == cap.check_ffmpeg()
     clean_temp_dir()
@@ -360,5 +363,7 @@ if __name__ == "__main__":
             time.sleep(60)
         else:
             logger.info("is night, should capture video")
+            if True == cap.is_hit_sum_size_limit():
+                cap.delete_old_video()
             cap.record_one_video_file()
 
