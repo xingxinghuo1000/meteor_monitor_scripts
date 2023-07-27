@@ -8,5 +8,9 @@ PROCESS_END_TIME = "1700"
 EXECUTOR_NUM = 1
 PYTHON_BIN = "python"
 # your location
-LATITUDE=39.4
-LONGITUDE=115.7
+LATITUDE = "39.4"
+LONGITUDE = "115.7"
+# max video capture directory size
+VIDEO_CAP_DIR_MAX_SIZE_BYTES = "30000000000"
+CAPTURE_VIDEO_PATH = 'v:\meteor_monitor\origin'
+
