@@ -3,8 +3,6 @@ input_file_type = "local"
 input_file_base_path = "E:\meteor_monitor\origin"
 base_output_type = "local"
 base_output_path = "E:\meteor_monitor\meteor_store"
-PROCESS_START_TIME = "0810"
-PROCESS_END_TIME = "1700"
 EXECUTOR_NUM = 1
 PYTHON_BIN = "python"
 # your location

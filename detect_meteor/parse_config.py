@@ -42,8 +42,6 @@ def read_config_text():
 cfg = {
     'DEBUG': 0,
     'EXECUTOR_NUM': 4,
-    'PROCESS_START_TIME': '0700',
-    'PROCESS_END_TIME': '2200', 
     'base_output_type': 'local',
     'base_output_host': '',
     'base_output_user': 'pi',
