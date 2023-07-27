@@ -38,6 +38,17 @@ def init_capture():
     assert len(li) > 0
     device_name = li[0]
 
+
+def check_ffmpeg():
+    text = os.popen("ffmpeg --help 2>&1").read()
+    #print("ffmpeg output text: ", text)
+    if ' version ' in text and ' Copyright ' in text:
+        return True
+    else:
+        return False
+
+
+
 def show_video_format_support():
     assert device_name != None
     ret = os.popen('ffmpeg -list_options true -f dshow -i video="{0}" 2>&1'.format(device_name)).read()
@@ -71,14 +82,6 @@ def record_one_video_file():
     logger.info("cmd: " + cmd)
     os.popen(cmd).read()
 
-def check_ffmpeg():
-    ret = os.popen("ffmpeg -h 2>&1").read()
-    #print("ffmpeg -h ret: " + ret)
-    if len(ret) > 500:
-        return True
-    else:
-        logger.error("check ffmpeg failed, ret: " + ret)
-        return False
 
 def get_file_name_by_current_time():
     n = datetime.datetime.now()

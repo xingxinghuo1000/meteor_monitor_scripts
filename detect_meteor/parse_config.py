@@ -58,6 +58,8 @@ cfg = {
     'IP_ADDR': '',
     'PYTHON_BIN': 'python',
     'LOCK_STR': '',
+    'LATITUDE': 40,
+    'LONGITUDE': 120,
 }
 
 

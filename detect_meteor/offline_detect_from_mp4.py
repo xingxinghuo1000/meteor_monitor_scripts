@@ -13,23 +13,18 @@ import util
 import parse_config
 import store_lib
 import process_one_video as pov
+from suntime import Sun, SunTimeException
+import logzero
+from logzero import logger
+logzero.logfile("default.log", maxBytes=1e6, backupCount=3)
+
+import capture_by_ffmpeg as cap
 
 cfg = parse_config.parse()
 
 queue_obj = queue.Queue()
 
 
-
-def check_ffmpeg():
-    text = os.popen("ffmpeg --help 2>&1").read()
-    #print("ffmpeg output text: ", text)
-    if ' version ' in text and ' Copyright ' in text:
-        return True
-    else:
-        return False
-
-def test_check_ffmpeg():
-    assert True == check_ffmpeg()
 
     
 
@@ -51,34 +46,34 @@ def process_from_queue(q):
         full_path = q.get()
         if full_path == "poison":
             # this is poison, then exit
-            print("thread got poison, then exit")
+            logger.info("thread got poison, then exit")
             break
         else:
             if not store_lib.input_path_file_exists(full_path):
-                print("file not exists, full_path: ", full_path)
+                logger.info("file not exists, full_path: ", full_path)
                 continue
             if store_lib.input_path_file_exists(full_path + '.lock'):
-                print("lock file alreay exists, then return. full_path: ", full_path)
+                logger.info("lock file alreay exists, then return. full_path: ", full_path)
                 continue
             if store_lib.input_path_file_exists(full_path + '.analyze'):
-                print("analyze file already exists, then return, full_path: ", full_path)
+                logger.info("analyze file already exists, then return, full_path: ", full_path)
                 continue
             lock_flag = try_lock_file(full_path)
             if lock_flag == False:
-                print("lock file failed, then return, full_path: ", full_path)
+                logger.info("lock file failed, then return, full_path: ", full_path)
                 continue
             #pov.process_one_video(full_path)
             cmd = r'''{0} offline_detect_from_mp4.py --video_file="{1}" 2>&1 '''.format(cfg['PYTHON_BIN'], full_path)
-            print("run cmd: ", cmd)
+            logger.info("run cmd: ", cmd)
             text = os.popen(cmd).read()
-            print("process ret: ", text)
+            logger.info("process ret: ", text)
             # write analyze file, and remove lock file
             try:
-                print("try to remove lock file")
+                logger.info("try to remove lock file")
                 if store_lib.input_path_file_exists(full_path + '.lock'):
                     store_lib.delete_input_path_file(full_path + '.lock')
             except:
-                traceback.print_exc()
+                logger.warn(traceback.format_exc())
 
 
 # If process is killed, then lock file will be remained as trash
@@ -91,68 +86,73 @@ def del_old_lock_files(lock_list):
         if store_lib.input_path_file_exists(lock):
             try:
                 b1 = store_lib.read_file_from_input_path(lock)
-                print("b1: ", b1)
+                logger.info("b1: " + str([b1]))
                 if type(b1) == type("abc"):
                     text = b1
                 else:
                     text = b1.decode("utf-8")
-                print("lock content: ", text)
+                logger.info("lock content: " + text)
                 d = json.loads(text)
                 if 'createTime' in d:
                     lock_t = datetime.datetime.strptime(d['createTime'], "%Y-%m-%d %H:%M:%S")
+                    logger.info("lock_t: " + str(lock_t))
                     n = datetime.datetime.now()
+                    logger.info("now: " + str(n))
                     delta = n - lock_t
-                    if delta.seconds > 3600:
+                    logger.info("delta.total_seconds: " + str(delta.total_seconds()))
+                    if delta.total_seconds() > 1800:
                         store_lib.delete_input_path_file(lock)
             except:
-                print("delete old lock file Excepttion:")
-                traceback.print_exc()
+                logger.warn("delete old lock file Excepttion:")
+                logger.warn(traceback.format_exc())
 
 # test case
 def test_del_old_lock():
-    lock_content1 = '{"createTime": "2022-05-17 00:00:00"}'
-    with open("test1.mp4.lock", 'w') as f1:
-        f1.write(lock_content1)
+    lock_file_1_full = os.path.join(cfg['input_file_base_path'], 'test1.mp4.lock')
+    lock_file_2_full = os.path.join(cfg['input_file_base_path'], 'test2.mp4.lock')
+    lock_content1 = '{"createTime": "2022-07-27 21:00:00"}'
+    store_lib.write_file_to_input_path(lock_file_1_full, lock_content1.encode("utf-8"))
+    assert True == store_lib.input_path_file_exists(lock_file_1_full)
     lock_content2 = '{"createTime": "' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '"}'
-    with open("test2.mp4.lock", 'w') as f2:
-        f2.write(lock_content2)
-    del_old_lock_files(["test1.mp4.lock", "test2.mp4.lock"])
-    assert not os.path.exists("test1.mp4.lock")
-    assert os.path.exists("test2.mp4.lock")
-    os.remove("test2.mp4.lock")
+    store_lib.write_file_to_input_path(lock_file_2_full, lock_content2.encode("utf-8"))
+    time.sleep(1)
+    del_old_lock_files([lock_file_1_full, lock_file_2_full])
+    assert False == store_lib.input_path_file_exists(lock_file_1_full)
+    assert True  == store_lib.input_path_file_exists(lock_file_2_full)
+    store_lib.delete_input_path_file(lock_file_2_full)
 
 
 def filter_by_done_file(video_list, orig_list):
     temp_list_1 = []
     for x in video_list:
         analyze_file = x + '.analyze'
-        #print("check analyze file is exists: " + analyze_file)
+        #logger.info("check analyze file is exists: " + analyze_file)
         if analyze_file not in orig_list:
             temp_list_1.append(x)
     if len(temp_list_1) == 0:
-        print("video list is empty after analyze filter, then return")
+        logger.info("video list is empty after analyze filter, then return")
         return []
     temp_list_2 = []
     for x in temp_list_1:
         done_file = x + '.done'
-        #print("check done file is exists: " + done_file)
+        #logger.info("check done file is exists: " + done_file)
         if done_file in orig_list:
             temp_list_2.append(x)
     if len(temp_list_2) == 0:
-        print("video list is empty after done filter, then return")
+        logger.info("video list is empty after done filter, then return")
         return []
     return temp_list_2
 
 def batch_process():
     #run batch
-    print("start one batch process")
+    logger.info("start one batch process")
     orig_list = store_lib.list_input_path(cfg['input_file_base_path'])
     lock_list = [os.path.join(cfg['input_file_base_path'], x) for x in orig_list if x.endswith(".lock")]
-    print("lock_list: ", lock_list)
+    logger.info("lock_list: ", lock_list)
     del_old_lock_files(lock_list)
     video_list = [x for x in orig_list if x.endswith(".mp4") and '120x' not in x]
     if len(video_list) == 0:
-        print("video list is empty, then return")
+        logger.info("video list is empty, then return")
         return
     video_list.sort()
     video_list = filter_by_done_file(video_list, orig_list)
@@ -163,7 +163,7 @@ def batch_process():
     # one batch process 10 files
     if len(video_list) > 30:
         video_list = video_list[:30]
-    print("found video list: ", video_list)
+    logger.info("found video list: ", video_list)
     # first start processor threads
     threads = []
     for i in range(cfg['EXECUTOR_NUM']):
@@ -181,7 +181,7 @@ def batch_process():
     # wait thread to exit
     for t in threads:
         t.join()
-    print("all thread exited")
+    logger.info("all thread exited")
                                     
 
 def try_lock_file(full_path):
@@ -200,7 +200,7 @@ def try_lock_file(full_path):
             lock_content = json.dumps(d)
             store_lib.write_file_to_input_path(lockfile, lock_content.encode("utf-8"))
         except:
-            traceback.print_exc()
+            logger.warn(traceback.format_exc())
             return False
         if not store_lib.input_path_file_exists(lockfile):
             # write failed, maybe file path can not be written, return False
@@ -215,7 +215,7 @@ def try_lock_file(full_path):
                     str_read = temp_bytes.decode("utf-8")
                 str_read = str_read.strip("\r\n").strip()
             except:
-                traceback.print_exc()
+                logger.warn(traceback.format_exc())
                 return False
             if cfg['LOCK_STR'] not in str_read:
                 # may be written again be other process or other machine
@@ -226,65 +226,101 @@ def try_lock_file(full_path):
 
 def test_lock():
     # test 1
-    if os.path.exists("1.txt.lock"):
-        os.remove('1.txt.lock')
+    if store_lib.input_path_file_exists("1.txt.lock"):
+        store_lib.delete_input_path_file('1.txt.lock')
     full_path = "1.txt"
     assert True == try_lock_file("1.txt")
-    if os.path.exists("1.txt.lock"):
-        os.remove("1.txt.lock")
+    if store_lib.input_path_file_exists("1.txt.lock"):
+        store_lib.delete_input_path_file("1.txt.lock")
     # test 2
-    if os.path.exists("2.txt.lock"):
-        os.remove('2.txt.lock')
-    f2 = open("2.txt.lock", 'w')
-    f2.write("1123123")
-    f2.close()
+    if store_lib.input_path_file_exists("2.txt.lock"):
+        store_lib.delete_input_path_file('2.txt.lock')
+    store_lib.write_file_to_input_path("2.txt.lock", b'1123123')
     assert False == try_lock_file("2.txt")
-    if os.path.exists("2.txt.lock"):
-        os.remove("2.txt.lock")
+    if store_lib.input_path_file_exists("2.txt.lock"):
+        store_lib.delete_input_path_file("2.txt.lock")
 
 
-def should_process_now(tstr):
-    print("current time: ", tstr)
-    if tstr >= '0000' and tstr < cfg['PROCESS_START_TIME']:
-        print("should process, return False")
+def get_sun_time(latitude, longitude):
+    assert type(latitude) == type(1.1)
+    assert type(longitude) == type(1.1)
+    sun = Sun(latitude, longitude)
+    today_sr_utc = sun.get_sunrise_time()
+    today_ss_utc = sun.get_sunset_time()
+    today_sr_local = utc2local(today_sr_utc)
+    today_ss_local = utc2local(today_ss_utc)
+    logger.info("today_sr_utc: " + str(today_sr_utc))
+    logger.info("today_ss_utc: " + str(today_ss_utc))
+    logger.info("today_sr_local: " + str(today_sr_local))
+    logger.info("today_ss_local: " + str(today_ss_local))
+    return today_sr_utc, today_ss_utc, today_sr_local, today_ss_local
+
+
+def should_process_now():
+    n = datetime.datetime.now()
+    n_str = n.strftime("%H:%M")
+    delta2h = datetime.timedelta(hours=2)
+    sr_utc, ss_utc, sr_local, ss_local = get_sun_time(float(cfg["LATITUDE"]), 
+            float(cfg['LONGITUDE']))
+    black_time_sr = sr_local - delta2h
+    black_time_ss = ss_local + delta2h
+    a = black_time_sr.strftime("%H:%M")
+    b = black_time_ss.strftime("%H:%M")
+    logger.info("now: " + n_str)
+    logger.info("a: " + a + "     b: " + b)
+    return is_night(n_str, a, b)
+    
+
+def is_night(n_str, a, b):
+    if n_str >= "00:00" and n_str < a:
+        return True
+    if n_str > a and n_str < b:
         return False
-    if tstr >= cfg['PROCESS_END_TIME'] and tstr <= '2359':
-        print("should process, return False")
-        return False
-    print("should process, return True")
-    return True
+    if n_str >= b and n_str <= "23:59":
+        return True
+    return False
 
-def test_should_process():
-    assert False == should_process_now('0000')
-    assert False == should_process_now('0001')
-    assert False == should_process_now('0500')
-    assert False == should_process_now('0600')
-    assert True == should_process_now('0800')
-    assert True == should_process_now('1200')
-    assert True == should_process_now('1200')
-    assert True == should_process_now('1800')
-    assert True == should_process_now('1900')
-    assert True == should_process_now('2100')
-    assert True == should_process_now('2159')
-    assert False == should_process_now('2200')
-    assert False == should_process_now('2300')
-    assert False == should_process_now('2359')
+def test_is_night():
+    assert True == is_night("00:00", "05:00", "20:00")
+    assert True == is_night("00:01", "05:00", "20:00")
+    assert True == is_night("04:59", "05:00", "20:00")
+    assert False == is_night("05:00", "05:00", "20:00")
+    assert False == is_night("05:01", "05:00", "20:00")
+    assert False == is_night("07:00", "05:00", "20:00")
+    assert False == is_night("12:00", "05:00", "20:00")
+    assert False == is_night("15:00", "05:00", "20:00")
+    assert False == is_night("19:59", "05:00", "20:00")
+    assert True == is_night("20:00", "05:00", "20:00")
+    assert True == is_night("20:01", "05:00", "20:00")
+    assert True == is_night("22:01", "05:00", "20:00")
+    assert True == is_night("23:59", "05:00", "20:00")
+
+    
+def utc2local(utc_dtm):
+    local_tm = datetime.datetime.fromtimestamp( 0 )
+    utc_tm = datetime.datetime.utcfromtimestamp( 0 )
+    offset = local_tm - utc_tm
+    return utc_dtm + offset
+
+def local2utc(local_dtm):
+    return datetime.datetime.utcfromtimestamp( local_dtm.timestamp() )
+
 
 def clean_temp_dir():
     cur_time = time.time()
     if os.path.exists("temp"):
-        print("try to clean temp dir")
+        logger.info("try to clean temp dir")
         for f in os.listdir("temp"):
             ff = os.path.join("temp", f)
             t = os.path.getmtime(ff)
             diff = int(cur_time - t)
-            print("(current time) - (temp time create time) = ", diff)
+            logger.info("(current time) - (temp time create time) = ", diff)
             if diff > 7200:
-                print("try to remove temp file: ", f)
+                logger.info("try to remove temp file: "+f)
                 util.safe_os_remove(ff)
 
 if __name__ == "__main__":
-    assert True == check_ffmpeg()
+    assert True == cap.check_ffmpeg()
     clean_temp_dir()
     if '--debug' in sys.argv:
         cfg['DEBUG'] = 1
@@ -292,12 +328,12 @@ if __name__ == "__main__":
         if '--video-file=' in arg:
             arg = arg.replace("--video-file=", "--video_file=")
         if '--video_file=' in arg:
-            print("process single video file")
+            logger.info("process single video file")
             full_path = arg.split("--video_file=")[1]
             if full_path.startswith('"'):
                 full_path = full_path.strip('"')
             store_lib.input_path_file_exists(full_path)
-            print("full_path: ", full_path)
+            logger.info("full_path: "+full_path)
             pov.process_one_video(full_path)
             sys.exit(0)
         if '--run_it' in arg:
@@ -305,17 +341,16 @@ if __name__ == "__main__":
             run_it()
             sys.exit(0)
     while 1:
-        n = datetime.datetime.now()
-        tstr = n.strftime("%H%M")
-        if should_process_now(tstr):
+        if should_process_now():
+            logger.info("sould process get True, process begin")
             try:
                 batch_process()
             except:
-                print("Error when batch_process")
-                traceback.print_exc()
-            print("after process, sleep 60")
+                logger.warn("Error when batch_process")
+                logger.warn(traceback.format_exc())
+            logger.info("after process, sleep 60")
             time.sleep(60)
         else:
-            print("not now, then sleep 60")
+            logger.info("not now, then sleep 60")
             time.sleep(60)
 
