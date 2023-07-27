@@ -60,6 +60,7 @@ cfg = {
     'LOCK_STR': '',
     'LATITUDE': 40,
     'LONGITUDE': 120,
+    'VIDEO_CAP_DIR_MAX_SIZE_BYTES': 30 * 1024 * 1024 * 1024
 }
 
 

@@ -268,7 +268,12 @@ def should_process_now():
     b = black_time_ss.strftime("%H:%M")
     logger.info("now: " + n_str)
     logger.info("a: " + a + "     b: " + b)
-    return is_night(n_str, a, b)
+    is_night = is_night(n_str, a, b)
+    if is_night:
+        return False
+    else:
+        # is in daylight
+        return True
     
 
 def is_night(n_str, a, b):
@@ -340,6 +345,9 @@ if __name__ == "__main__":
             cfg['DEBUG'] = 1
             run_it()
             sys.exit(0)
+
+    # loop process or capture video
+    cap.init_capture()
     while 1:
         if should_process_now():
             logger.info("sould process get True, process begin")
@@ -351,6 +359,6 @@ if __name__ == "__main__":
             logger.info("after process, sleep 60")
             time.sleep(60)
         else:
-            logger.info("not now, then sleep 60")
-            time.sleep(60)
+            logger.info("is night, should capture video")
+            cap.record_one_video_file()
 

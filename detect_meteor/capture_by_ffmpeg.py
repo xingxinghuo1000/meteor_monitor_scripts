@@ -48,6 +48,21 @@ def check_ffmpeg():
         return False
 
 
+def is_hit_sum_size_limit():
+    li = os.listdir(cfg['CAPTURE_VIDEO_PATH'])
+    sum = 0
+    for f in li:
+        full_p = os.path.join(cfg['CAPTURE_VIDEO_PATH'], f)
+        if os.path.exists(full_p):
+            sum += os.path.getsize(full_p)
+    logger.info("current size: " + str(sum/1024/1024) + " MB")
+    if sum > int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']):
+        logger.warn("hit max limit")
+        return True
+    else:
+        return False
+
+
 
 def show_video_format_support():
     assert device_name != None
