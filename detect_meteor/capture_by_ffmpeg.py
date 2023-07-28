@@ -129,7 +129,7 @@ def record_one_video_file():
     fname = get_file_name_by_current_time()
     full_name = os.path.join(base_path, fname)
     full_log_name = full_name + ".log"
-    cmd = 'ffmpeg -f dshow -i video="{0}" -c:v {1} -q 23 -vf eq=brightness=0.1  -s 1920x1080 -r 30  -t 300 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name)
+    cmd = 'ffmpeg -f dshow -i video="{0}" -c:v {1} -q 23 -vf eq=brightness=0.1  -s 1920x1080 -r 30  -t 300 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name, full_log_name)
     logger.info("cmd: " + cmd)
     os.popen(cmd).read()
 
