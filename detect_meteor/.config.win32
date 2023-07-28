@@ -10,5 +10,5 @@ LATITUDE = "39.4"
 LONGITUDE = "115.7"
 # max video capture directory size
 VIDEO_CAP_DIR_MAX_SIZE_BYTES = "30000000000"
-CAPTURE_VIDEO_PATH = 'v:\meteor_monitor\origin'
+CAPTURE_VIDEO_PATH = "v:\meteor_monitor\origin"
 
