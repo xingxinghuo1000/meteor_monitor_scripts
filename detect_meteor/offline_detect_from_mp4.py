@@ -366,4 +366,5 @@ if __name__ == "__main__":
             if True == cap.is_hit_sum_size_limit():
                 cap.delete_old_video()
             cap.record_one_video_file()
+            time.sleep(1)
 
