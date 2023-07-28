@@ -5,6 +5,8 @@ import platform
 import datetime
 import parse_config
 from logzero import logger
+import traceback
+import util
 
 cfg = parse_config.parse()
 
@@ -76,19 +78,22 @@ def delete_old_video():
     while sum_size > int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']):
         video_path = os.path.join(target_dir, videos[0])
         print("try to remove path:" + video_path)
-        os.remove(video_path)
+        util.safe_os_remove(video_path)
         done_file = video_path + '.done'
         if os.path.exists(done_file):
-            os.remove(done_file)
+            util.safe_os_remove(done_file)
         lock_file = video_path + '.lock'
         if os.path.exists(lock_file):
-            os.remove(lock_file)
+            util.safe_os_remove(lock_file)
         analyze_file = video_path + '.analyze'
         if os.path.exists(analyze_file):
-            os.remove(analyze_file)
+            util.safe_os_remove(analyze_file)
         time_elapse_file = video_path.replace(".mp4", "")  + '.120x.mp4'
         if os.path.exists(time_elapse_file):
-            os.remove(time_elapse_file)
+            util.safe_os_remove(time_elapse_file)
+        log_file = video_path +'.log'
+        if os.path.exists(log_file):
+            util.safe_os_remove(log_file)
         videos = os.listdir(target_dir)
         videos = [x for x in videos if x.endswith('.mp4')]
         videos.sort()
