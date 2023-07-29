@@ -10,6 +10,7 @@ import imageio
 
 import parse_config
 import store_lib
+from logzero import logger
 
 cfg = parse_config.parse()
 
@@ -39,14 +40,14 @@ def mask_img(origin_path, img, w, h):
         base_dir = os.path.dirname(origin_path)
         mask_file1 = os.path.join(base_dir, 'mask-1280-720.bmp')
         mask_file2 = 'mask-1280-720.bmp'
-        print("try to find mask file1: ", mask_file1) 
-        print("try to find mask file2: ", mask_file2) 
+        logger.info("try to find mask file1: " + mask_file1) 
+        logger.info("try to find mask file2: " + mask_file2) 
         if not store_lib.input_path_file_exists(mask_file1) and not os.path.exists(mask_file2):
-            print("can not find mask file")
+            logger.info("can not find mask file")
             has_load_img_mask = 1
             return img
         if store_lib.input_path_file_exists(mask_file1):
-            print("find image mask file1, path: ", mask_file1)
+            logger.info("find image mask file1, path: " + mask_file1)
             tmp_bmp_file = store_lib.gen_local_temp_file() + ".bmp"
             store_lib.fetch_file_from_input_path(mask_file1, tmp_bmp_file)
             assert os.path.exists(tmp_bmp_file)
@@ -57,7 +58,7 @@ def mask_img(origin_path, img, w, h):
                 img_mask = cv2.resize(img_mask, (w,h))
         else: 
             if os.path.exists(mask_file2):
-                print("find image mask file2, path: ", mask_file2)
+                logger.info("find image mask file2, path: " + mask_file2)
                 img_mask = cv2.imread(mask_file2)
                 has_mask = 1
                 if w != 1280:
@@ -123,10 +124,10 @@ def process_one_frame(data_obj):
     if cnt %200 == 0:
         if cnt > 100:
             t2 = time.time()
-            print("process speed, {0} frames per sec".format(int((cnt - last_cnt)/(t2-data_obj['t1']))))
+            logger.info("process speed, {0} frames per sec".format(int((cnt - last_cnt)/(t2-data_obj['t1']))))
             data_obj["last_cnt"] = cnt
             data_obj['t1'] = t2
-        print("frame count: ", cnt, '  total: ', frame_count)
+        logger.info("frame count: {0}  total: {1}".format(cnt, frame_count))
     match = 0
     match_rec = None
     
@@ -140,7 +141,7 @@ def process_one_frame(data_obj):
     # save recent 5 frames, for further purpose
     save_recent_frames(gray_lwpCV, last_5_frame)
     if cnt % split_limit == 0:
-        print("set background")
+        logger.info("set background")
         data_obj['background'] = get_recent_avg_img(last_5_frame)
 
         if cfg['DEBUG']:
@@ -165,8 +166,8 @@ def process_one_frame(data_obj):
                 #filter_info_list.append(item)
                 continue
             if area > int(512*512*0.5):
-                print("area: ", area)
-                print("SKIP this frame, filter by area too big")
+                logger.info("area: " + str(area))
+                logger.info("SKIP this frame, filter by area too big")
                 item = {
                     "filter_reason": "area too big", 
                     "c": "w, y, w, h: " + str(cv2.boundingRect(c)), 
@@ -185,9 +186,9 @@ def process_one_frame(data_obj):
             mean_crop_orig = cv2.mean(crop_orig)[0]
             # condition 1, lightness < orgin
             if mean_crop_diff < mean_crop_orig:
-                print("mean_crop_diff: ", mean_crop_diff)
-                print("mean_crop_orig: ", mean_crop_orig)
-                print("SKIP this frame, filter by bird bug or bat")
+                logger.info("mean_crop_diff: " + str(mean_crop_diff))
+                logger.info("mean_crop_orig: " + str(mean_crop_orig))
+                logger.info("SKIP this frame, filter by bird bug or bat")
                 item = {
                     "filter_reason": " bird bug or bat", 
                     "c": "w, y, w, h: " + str((x,y,w,h)), 
@@ -196,7 +197,7 @@ def process_one_frame(data_obj):
                 filter_info_list.append(item)
                 continue
             cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 2)
-            print("find diff, frame index: ", cnt, ' rectangle: ', (x,y,w,h))
+            logger.info("find diff, frame index: " + str(cnt) + ' rectangle: ' +  str((x,y,w,h)))
 
             match = 1
             match_rec = (x,y,w,h)
@@ -211,7 +212,9 @@ def process_one_frame(data_obj):
                 cv2.imwrite(tmp_jpg, resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
                 gif_frame = imageio.imread(tmp_jpg)
                 data_obj['diff_frames_by_index'][str(cnt)] = gif_frame
-                print("save diff frame, current total frame num: ", len(data_obj['diff_frames_by_index']), " cur idx: ", cnt)
+                logger.info("save diff frame, current total frame num: {0}, cur idx:{1}".format(
+                        len(data_obj['diff_frames_by_index']), 
+                        cnt))
                 util.safe_os_remove(tmp_jpg)
     if cfg['DEBUG']:
         cv2.imshow("frame: ", resized_frame)
@@ -228,21 +231,21 @@ def process_one_frame(data_obj):
 def read_one_video(local_video_path, origin_path):
     vid_capture = cv2.VideoCapture(local_video_path)
     if (vid_capture.isOpened() == False):
-        print("Error opening the video file")
+        logger.info("Error opening the video file")
         vid_capture.release()
         return None
     width = int(vid_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    print('video width: ', width)
+    logger.info('video width: ' + str(width))
     height = int(vid_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    print('video height: ', height)
+    logger.info('video height: ' + str(height))
     fourcc = int(vid_capture.get(cv2.CAP_PROP_FOURCC))
-    print("fourcc: ", decode_fourcc(fourcc))
+    logger.info("fourcc: " + str(decode_fourcc(fourcc)))
     fps = vid_capture.get(cv2.CAP_PROP_FPS)
-    print('Frames per second : ', int(fps),'FPS')
+    logger.info('Frames per second : ' + str(int(fps)) + 'FPS')
     frame_count = vid_capture.get(7)
-    print('Frame count : ', frame_count)
+    logger.info('Frame count : ' + str(frame_count))
     time_sec = frame_count / fps
-    print("time total seconds: ", time_sec)
+    logger.info("time total seconds: " + str(time_sec))
     index = []
     index_with_rec = []
     diff_frames_by_index = {}
@@ -276,14 +279,14 @@ def read_one_video(local_video_path, origin_path):
     if 'elapse_120x' in data_obj:
         data_obj['elapse_120x'].release()
         convert_avi_to_264(data_obj['elapse_120x_fn'])
-    print("index: ", index)
-    print("filter_info_list: ", data_obj['filter_info_list'])
+    logger.info("index: " + str(index))
+    logger.info("filter_info_list: " + str(data_obj['filter_info_list']))
     return data_obj
 
 
 
 def convert_avi_to_264(avi_file):
-    print("convert avi to h264")
+    logger.info("convert avi to h264")
     name = os.path.basename(avi_file)
     h264_basename = name.replace(".avi", "") + ".mp4"
     local_file = os.path.join("temp", h264_basename)
@@ -291,9 +294,9 @@ def convert_avi_to_264(avi_file):
         util.safe_os_remove(local_file)
     cmd = r'''ffmpeg -i "{0}"  -c:v h264 -b:v 8000k -strict -2  "{1}" 2>&1'''.format(
         avi_file, local_file)
-    print("cmd: ", cmd)
+    logger.info("cmd: " + cmd)
     ret = os.popen(cmd).read()
-    print("ffmpeg output:\n" + ret)
+    logger.info("ffmpeg output:\n" + ret)
     util.safe_os_remove(avi_file)
     assert os.path.exists(local_file)
     remote_file = os.path.join(cfg['input_file_base_path'], h264_basename)
@@ -322,7 +325,7 @@ def process_time_elapse_one_frame(data_obj):
     if data_obj['frame_idx'] % 120 == 3:
         m = get_recent_avg_img(frames_elapse)
         frames_elapse = []
-        print("write one frame fox 120x elapse video, frame_idx:", data_obj['frame_idx'])
+        logger.info("write one frame fox 120x elapse video, frame_idx:" + str(data_obj['frame_idx']))
         data_obj['elapse_120x'].write(m)
 
 def seconds_to_hum_readable(secs):
@@ -360,25 +363,26 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
     cmd = 'ffmpeg -ss "{0}" -t "{1}" -i "{2}" -vcodec copy -acodec copy "{3}" 2>&1 '.format(
             start_time, end_time, input_file, local_file)
 
-    print("run ffmpeg, cmd: ", cmd)
+    logger.info("run ffmpeg, cmd: " + cmd)
     text = os.popen(cmd).read()
-    print("cmd ret: ", text)
+    logger.info("cmd ret: " + text)
     # upload splitted video to remote output path
     store_lib.store_file_to_output_path(local_file, remote_file)
     util.safe_os_remove(local_file)
 
     # generate GIF file for debug
-    print("generate gif file.  segment: ", segment)
+    logger.info("generate gif file.  segment: " + segment)
     gif_file_name = t.strftime("%Y%m%d_%H%M%S_diff.gif")
     local_gif_file_path = os.path.join(temp_dir, gif_file_name)
     remote_gif_file_path = os.path.join(remote_dir, gif_file_name)
     temp_frames = []
     for idx in range(segment[0], segment[1] + 1):
-        print("try to find diff frames , idx: ", idx)
+        logger.info("try to find diff frames , idx: " + str(idx))
         if str(idx) in diff_frames_by_index:
             temp_frames.append(diff_frames_by_index[str(idx)])
     if len(temp_frames) > 0:
         duration_ms = int(len(temp_frames)/3 * 1000)
+        logger.info("gif duration: " + str(duration_ms))
         imageio.mimsave(local_gif_file_path, temp_frames, duration=duration_ms)
         store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
         util.safe_os_remove(local_gif_file_path)
@@ -432,7 +436,7 @@ def test_get_segments():
     assert segments == [[31, 35], [145, 148], [150, 150]]
 
 def get_segments_from_index(index):
-    #print("get_segments_from_index entry, index: ", index)
+    #logger.info("get_segments_from_index entry, index: ", index)
     segments = []
     begin = None
     mid = None
@@ -454,7 +458,7 @@ def get_segments_from_index(index):
                 end = i
     if begin != None:
         segments.append([begin, end])
-    #print("get segment return , segments: ", segments)
+    #logger.info("get segment return , segments: ", segments)
     return segments
 
 
@@ -541,7 +545,7 @@ def calc_split_range(index, frame_count, fps, time_sec, data_obj):
     for seg in new_segments:
         if seg[0] == seg[1]:
             msg = "[filter segment] reason: single diff frame. seg: " + str(seg)
-            print(msg)
+            logger.info(msg)
             data_obj['filter_segments'].append(msg)
             continue
         begin_time, duration = calc_begin_time_and_duration(seg, fps)
@@ -560,7 +564,7 @@ def fetch_video(full_path):
         try:
             os.makedirs("temp")
         except:
-            traceback.print_exc()
+            logger.info(traceback.format_exc())
     local_f = get_local_path(full_path)
     if os.path.exists(local_f):
         util.safe_os_remove(local_f)
@@ -569,7 +573,7 @@ def fetch_video(full_path):
     
     
 def process_one_video(full_path):
-    print("processing video, ", full_path)
+    logger.info("processing video, " + full_path)
     t11 = time.time()
     fetch_video(full_path)
     t22 = time.time() 
@@ -590,10 +594,10 @@ def process_one_video(full_path):
         if len(param_list) > 0:
             for param in param_list:
                 ffmpg_split(param[0], param[1], param[2], local_file, ret["diff_frames_by_index"])
-    print("process time: ", int(t2-t1))
+    logger.info("process time: " + str(int(t2-t1)))
     time_use = t2-t1
     process_speed = int(frame_count/time_use)
-    print("process speed fps: ", int(frame_count/(t2-t1)))
+    logger.info("process speed fps: " + str(int(frame_count/(t2-t1))))
     d = {}
     d["IP"] = cfg['IP_ADDR']
     d["index"] = index
@@ -612,10 +616,10 @@ def process_one_video(full_path):
 
 def write_analyze(full_path, text):
     ana_file = full_path + '.analyze'
-    print("try to create .analyze file, path: ", ana_file)
+    logger.info("try to create .analyze file, path: " + ana_file)
     
     if cfg['DEBUG']:
-        print("analyze result:\n" + text)
+        logger.info("analyze result:\n" + text)
     else:
         store_lib.write_file_to_input_path(
             full_path + '.analyze',
