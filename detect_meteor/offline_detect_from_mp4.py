@@ -50,23 +50,23 @@ def process_from_queue(q):
             break
         else:
             if not store_lib.input_path_file_exists(full_path):
-                logger.info("file not exists, full_path: ", full_path)
+                logger.info("file not exists, full_path: " + full_path)
                 continue
             if store_lib.input_path_file_exists(full_path + '.lock'):
-                logger.info("lock file alreay exists, then return. full_path: ", full_path)
+                logger.info("lock file alreay exists, then return. full_path: " + full_path)
                 continue
             if store_lib.input_path_file_exists(full_path + '.analyze'):
-                logger.info("analyze file already exists, then return, full_path: ", full_path)
+                logger.info("analyze file already exists, then return, full_path: " + full_path)
                 continue
             lock_flag = try_lock_file(full_path)
             if lock_flag == False:
-                logger.info("lock file failed, then return, full_path: ", full_path)
+                logger.info("lock file failed, then return, full_path: " + full_path)
                 continue
             #pov.process_one_video(full_path)
             cmd = r'''{0} offline_detect_from_mp4.py --video_file="{1}" 2>&1 '''.format(cfg['PYTHON_BIN'], full_path)
-            logger.info("run cmd: ", cmd)
+            logger.info("run cmd: " + cmd)
             text = os.popen(cmd).read()
-            logger.info("process ret: ", text)
+            logger.info("process ret: " + text)
             # write analyze file, and remove lock file
             try:
                 logger.info("try to remove lock file")
@@ -148,7 +148,7 @@ def batch_process():
     logger.info("start one batch process")
     orig_list = store_lib.list_input_path(cfg['input_file_base_path'])
     lock_list = [os.path.join(cfg['input_file_base_path'], x) for x in orig_list if x.endswith(".lock")]
-    logger.info("lock_list: ", lock_list)
+    logger.info("lock_list: " + str(lock_list))
     del_old_lock_files(lock_list)
     video_list = [x for x in orig_list if x.endswith(".mp4") and '120x' not in x]
     if len(video_list) == 0:
@@ -163,7 +163,7 @@ def batch_process():
     # one batch process 10 files
     if len(video_list) > 30:
         video_list = video_list[:30]
-    logger.info("found video list: ", video_list)
+    logger.info("found video list: " + str(video_list))
     # first start processor threads
     threads = []
     for i in range(cfg['EXECUTOR_NUM']):
@@ -319,7 +319,7 @@ def clean_temp_dir():
             ff = os.path.join("temp", f)
             t = os.path.getmtime(ff)
             diff = int(cur_time - t)
-            logger.info("(current time) - (temp time create time) = ", diff)
+            logger.info("(current time) - (temp time create time) = " + str(diff))
             if diff > 7200:
                 logger.info("try to remove temp file: "+f)
                 util.safe_os_remove(ff)
