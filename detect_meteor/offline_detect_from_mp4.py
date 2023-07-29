@@ -3,6 +3,8 @@ import os
 import shutil
 import time
 import datetime
+import logzero
+logzero.logfile("default.log", maxBytes=1e6, backupCount=3)
 import traceback
 import threading
 import queue
@@ -14,9 +16,7 @@ import parse_config
 import store_lib
 import process_one_video as pov
 from suntime import Sun, SunTimeException
-import logzero
 from logzero import logger
-logzero.logfile("default.log", maxBytes=1e6, backupCount=3)
 
 import capture_by_ffmpeg as cap
 

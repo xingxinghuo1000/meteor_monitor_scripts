@@ -382,11 +382,13 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
         if str(idx) in diff_frames_by_index:
             temp_frames.append(diff_frames_by_index[str(idx)])
     if len(temp_frames) > 0:
-        duration_ms = int(len(temp_frames)/3 * 1000)
-        logger.info("gif duration: " + str(duration_ms))
+        duration_sec = int(len(temp_frames)/3)
+        if duration_sec < 3:
+            duration_sec = 3
+        logger.info("gif duration: " + str(duration_sec))
         logger.info("local gif file: " + local_gif_file_path)
         logger.info("target gif file: " + remote_gif_file_path)
-        imageio.mimsave(local_gif_file_path, temp_frames, duration=duration_ms)
+        imageio.mimsave(local_gif_file_path, temp_frames, 'GIF', duration=duration_sec)
         if local_gif_file_path != remote_gif_file_path:
             store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
             logger.info("safe remove local gif file: " + local_gif_file_path)
