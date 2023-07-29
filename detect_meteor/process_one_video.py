@@ -378,7 +378,7 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
         if str(idx) in diff_frames_by_index:
             temp_frames.append(diff_frames_by_index[str(idx)])
     if len(temp_frames) > 0:
-        duration_ms = int(len(temp_frames)/3)
+        duration_ms = int(len(temp_frames)/3 * 1000)
         imageio.mimsave(local_gif_file_path, temp_frames, duration=duration_ms)
         store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
         util.safe_os_remove(local_gif_file_path)
