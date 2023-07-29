@@ -134,9 +134,15 @@ def record_one_video_file():
     fname = get_file_name_by_current_time()
     full_name = os.path.join(base_path, fname)
     full_log_name = full_name + ".log"
+    start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cmd = 'ffmpeg -f dshow -i video="{0}" -c:v {1} -q 23 -vf eq=brightness=0.1  -s 1920x1080 -r 30  -t 300 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name, full_log_name)
     logger.info("cmd: " + cmd)
     os.popen(cmd).read()
+    end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    done_content = json.dumps({"start_cap_time": start_time, "end_cap_time": end_time}, indent=4)
+    done_file = full_name + ".done"
+    with open(done_file, 'w') as f1:
+        f1.write(done_content)
 
 
 def get_file_name_by_current_time():
