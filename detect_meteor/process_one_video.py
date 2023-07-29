@@ -366,9 +366,10 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
     logger.info("run ffmpeg, cmd: " + cmd)
     text = os.popen(cmd).read()
     logger.info("cmd ret: " + text)
-    # upload splitted video to remote output path
-    store_lib.store_file_to_output_path(local_file, remote_file)
-    util.safe_os_remove(local_file)
+    if local_file != remote_file:
+        # upload splitted video to remote output path
+        store_lib.store_file_to_output_path(local_file, remote_file)
+        util.safe_os_remove(local_file)
 
     # generate GIF file for debug
     logger.info("generate gif file.  segment: " + str(segment))
@@ -383,9 +384,13 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
     if len(temp_frames) > 0:
         duration_ms = int(len(temp_frames)/3 * 1000)
         logger.info("gif duration: " + str(duration_ms))
+        logger.info("local gif file: " + local_gif_file_path)
+        logger.info("target gif file: " + remote_gif_file_path)
         imageio.mimsave(local_gif_file_path, temp_frames, duration=duration_ms)
-        store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
-        util.safe_os_remove(local_gif_file_path)
+        if local_gif_file_path != remote_gif_file_path:
+            store_lib.store_file_to_output_path(local_gif_file_path, remote_gif_file_path)
+            logger.info("safe remove local gif file: " + local_gif_file_path)
+            util.safe_os_remove(local_gif_file_path)
 
 def get_record_time_from_video_name(full_path, shift_time):
     basename = os.path.basename(full_path)
