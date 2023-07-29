@@ -168,7 +168,7 @@ def batch_process():
     threads = []
     for i in range(cfg['EXECUTOR_NUM']):
         t = threading.Thread(target=process_from_queue, args=(queue_obj,))
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
         threads.append(t)
     # get video list,  put them to queue
