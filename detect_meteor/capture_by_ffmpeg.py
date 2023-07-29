@@ -140,10 +140,23 @@ def record_one_video_file():
     logger.info("cmd: " + cmd)
     os.popen(cmd).read()
     end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    done_content = json.dumps({"start_cap_time": start_time, "end_cap_time": end_time}, indent=4)
-    done_file = full_name + ".done"
-    with open(done_file, 'w') as f1:
-        f1.write(done_content)
+    write_error_flag = 0
+    # read log file, read content
+    try:
+        with open(full_log_name) as f1:
+            content = f1.read()
+            if 'Could not enumerate video devices' in content:
+                logger.warn("ERROR: Could not enumerate video devices")
+                write_error_flag = 1
+                util.safe_os_remove(full_log_name)
+                time.sleep(5)
+    except:
+        logger.warn(traceback.format_exc())
+    if write_error_flag == 0:
+        done_content = json.dumps({"start_cap_time": start_time, "end_cap_time": end_time}, indent=4)
+        done_file = full_name + ".done"
+        with open(done_file, 'w') as f1:
+            f1.write(done_content)
 
 
 def get_file_name_by_current_time():
