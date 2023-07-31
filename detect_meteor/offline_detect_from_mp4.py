@@ -4,7 +4,7 @@ import shutil
 import time
 import datetime
 import logzero
-logzero.logfile("default.log", maxBytes=1e6, backupCount=3)
+logzero.logfile("default.log", maxBytes=50*1024*1024*1024, backupCount=3)
 import traceback
 import threading
 import queue
