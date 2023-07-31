@@ -354,8 +354,6 @@ if __name__ == "__main__":
     while 1:
         if should_process_now():
             logger.info("sould process get True, process begin")
-            if True == cap.is_hit_sum_size_limit():
-                cap.delete_old_video()
             try:
                 batch_process()
             except:
