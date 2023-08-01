@@ -66,43 +66,44 @@ def is_hit_sum_size_limit():
         return False
 
 
+def sum_files_size(base_dir):
+    sum1 = 0
+    files = os.listdir(base_dir)
+    for file in files:
+        full_path = os.path.join(base_dir, file)
+        sum1 += os.path.getsize(file_path)
+    return sum1
+
+
 def delete_old_video():
     target_dir = cfg['CAPTURE_VIDEO_PATH']
-    videos = os.listdir(target_dir)
-    if len(videos) == 0:
-        return
-    videos = [x for x in videos if x.endswith('.mp4')]
-    videos.sort()
-    sum_size = sum_files_size(videos)
-    print("sum size      : ", sum_size)
-    print("sum size limit: ", int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']))
-    while sum_size > int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']):
-        video_path = os.path.join(target_dir, videos[0])
-        print("try to remove path:" + video_path)
-        util.safe_os_remove(video_path)
-        done_file = video_path + '.done'
-        if os.path.exists(done_file):
-            util.safe_os_remove(done_file)
-        lock_file = video_path + '.lock'
-        if os.path.exists(lock_file):
-            util.safe_os_remove(lock_file)
-        analyze_file = video_path + '.analyze'
-        if os.path.exists(analyze_file):
-            util.safe_os_remove(analyze_file)
-        time_elapse_file = video_path.replace(".mp4", "")  + '.120x.mp4'
-        if os.path.exists(time_elapse_file):
-            util.safe_os_remove(time_elapse_file)
-        log_file = video_path +'.log'
-        if os.path.exists(log_file):
-            util.safe_os_remove(log_file)
-        videos = os.listdir(target_dir)
-        videos = [x for x in videos if x.endswith('.mp4')]
-        videos.sort()
-        sum_size = sum_files_size(videos)
+    while 1:
+        sum_size = sum_files_size(target_dir)
         print("sum size      : ", sum_size)
-        print("sum size limit: ", MAX_TARGET_VIDEO_SIZE)
+        print("sum size limit: ", int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']))
+        if sum_size < int(cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES']):
+            break
+        else:
 
+            videos = os.listdir(target_dir)
+            if len(videos) == 0:
+                break
+            videos = [x for x in videos if x.endswith('.mp4')]
+            videos.sort()
+            video_path = os.path.join(target_dir, videos[0])
 
+            print("try to remove path:" + video_path)
+            util.safe_os_remove(video_path)
+            done_file = video_path + '.done'
+            util.safe_os_remove(done_file)
+            lock_file = video_path + '.lock'
+            util.safe_os_remove(lock_file)
+            analyze_file = video_path + '.analyze'
+            util.safe_os_remove(analyze_file)
+            time_elapse_file = video_path.replace(".mp4", "")  + '.120x.mp4'
+            util.safe_os_remove(time_elapse_file)
+            log_file = video_path +'.log'
+            util.safe_os_remove(log_file)
 
 
 def show_video_format_support():
