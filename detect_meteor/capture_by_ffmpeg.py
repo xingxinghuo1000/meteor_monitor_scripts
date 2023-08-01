@@ -71,7 +71,7 @@ def sum_files_size(base_dir):
     files = os.listdir(base_dir)
     for file in files:
         full_path = os.path.join(base_dir, file)
-        sum1 += os.path.getsize(file_path)
+        sum1 += os.path.getsize(full_path)
     return sum1
 
 
