@@ -150,7 +150,7 @@ def batch_process():
     lock_list = [os.path.join(cfg['input_file_base_path'], x) for x in orig_list if x.endswith(".lock")]
     logger.info("lock_list: " + str(lock_list))
     del_old_lock_files(lock_list)
-    video_list = [x for x in orig_list if x.endswith(".mp4") and '120x' not in x]
+    video_list = [x for x in orig_list if x.endswith(".mp4") and '60x' not in x and '120x' not in x]
     if len(video_list) == 0:
         logger.info("video list is empty, then return")
         return

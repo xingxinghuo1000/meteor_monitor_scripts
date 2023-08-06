@@ -276,9 +276,9 @@ def read_one_video(local_video_path, origin_path):
         process_time_elapse_one_frame(data_obj)
 
     vid_capture.release()
-    if 'elapse_120x' in data_obj:
-        data_obj['elapse_120x'].release()
-        convert_avi_to_264(data_obj['elapse_120x_fn'])
+    if 'elapse_60x' in data_obj:
+        data_obj['elapse_60x'].release()
+        convert_avi_to_264(data_obj['elapse_60x_fn'])
     logger.info("index: " + str(index))
     logger.info("filter_info_list: " + str(data_obj['filter_info_list']))
     return data_obj
@@ -306,27 +306,27 @@ def convert_avi_to_264(avi_file):
 frames_elapse = []
 def process_time_elapse_one_frame(data_obj):
     global frames_elapse
-    if 'elapse_120x' not in data_obj:
+    if 'elapse_60x' not in data_obj:
         name = os.path.basename(data_obj['full_path']).replace(".mp4", "")
-        name += '.120x.avi'
+        name += '.60x.avi'
         if not os.path.exists(temp_time_elapse_video_dir):
             os.makedirs(temp_time_elapse_video_dir)
         fn = os.path.join(temp_time_elapse_video_dir, name)
-        data_obj['elapse_120x_fn'] = fn
+        data_obj['elapse_60x_fn'] = fn
         if os.path.exists(fn):
             util.safe_os_remove(fn)
         videoWriter = cv2.VideoWriter(fn, 
             cv2.VideoWriter_fourcc('I', '4', '2', '0'), 
             data_obj['fps'], 
             (data_obj['width'],data_obj['height']))
-        data_obj['elapse_120x'] = videoWriter
-    if data_obj['frame_idx'] % 120 < 3:
+        data_obj['elapse_60x'] = videoWriter
+    if data_obj['frame_idx'] % 60 < 3:
         frames_elapse.append(data_obj['frame'])
-    if data_obj['frame_idx'] % 120 == 3:
+    if data_obj['frame_idx'] % 60 == 3:
         m = get_recent_avg_img(frames_elapse)
         frames_elapse = []
-        logger.info("write one frame fox 120x elapse video, frame_idx:" + str(data_obj['frame_idx']))
-        data_obj['elapse_120x'].write(m)
+        logger.info("write one frame fox 60x elapse video, frame_idx:" + str(data_obj['frame_idx']))
+        data_obj['elapse_60x'].write(m)
 
 def seconds_to_hum_readable(secs):
     h = secs / 3600

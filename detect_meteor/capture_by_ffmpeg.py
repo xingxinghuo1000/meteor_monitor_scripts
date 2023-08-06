@@ -100,8 +100,10 @@ def delete_old_video():
             util.safe_os_remove(lock_file)
             analyze_file = video_path + '.analyze'
             util.safe_os_remove(analyze_file)
-            time_elapse_file = video_path.replace(".mp4", "")  + '.120x.mp4'
-            util.safe_os_remove(time_elapse_file)
+            time_elapse_file1 = video_path.replace(".mp4", "")  + '.120x.mp4'
+            util.safe_os_remove(time_elapse_file1)
+            time_elapse_file2 = video_path.replace(".mp4", "")  + '.60x.mp4'
+            util.safe_os_remove(time_elapse_file2)
             log_file = video_path +'.log'
             util.safe_os_remove(log_file)
 
@@ -137,7 +139,7 @@ def record_one_video_file():
     full_name = os.path.join(base_path, fname)
     full_log_name = full_name + ".log"
     start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cmd = 'ffmpeg -f dshow -i video="{0}" -c:v {1}  -b:v 6000k -minrate 5000k -maxrate 8000k  -vf eq=brightness=0.1  -s 1920x1080 -r 30  -t 300 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name, full_log_name)
+    cmd = 'ffmpeg -f dshow -i video="{0}" -c:v {1}  -b:v 6000k -minrate 5000k -maxrate 8000k  -vf eq=brightness=0.1  -s 1920x1080 -r 30  -t 600 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name, full_log_name)
     logger.info("cmd: " + cmd)
     os.popen(cmd).read()
     end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
