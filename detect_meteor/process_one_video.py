@@ -273,7 +273,9 @@ def read_one_video(local_video_path, origin_path):
         if ret == False:
             break
         process_one_frame(data_obj)
-        process_time_elapse_one_frame(data_obj)
+        # if set save time elapse video, then record it
+        if int(cfg['RECORD_TIME_ELAPSE_VIDEO']) == 1:
+            process_time_elapse_one_frame(data_obj)
 
     vid_capture.release()
     if 'elapse_60x' in data_obj:

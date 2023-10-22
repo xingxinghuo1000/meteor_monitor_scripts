@@ -63,6 +63,7 @@ cfg = {
     'DEVICE_NAME': '',
     'ENCODER': '',
     'ALWAY_PROCESS': 0, 
+    'RECORD_TIME_ELAPSE_VIDEO': 0,
 }
 
 
