@@ -4,7 +4,6 @@ import shutil
 import time
 import datetime
 import logzero
-logzero.logfile("logs/default.log", maxBytes=10*1024*1024, backupCount=3)
 import traceback
 import threading
 import queue
@@ -324,6 +323,25 @@ def clean_temp_dir():
                 logger.info("try to remove temp file: "+f)
                 util.safe_os_remove(ff)
 
+def loop_process_video():
+    while 1:
+        time.sleep(10)
+        flag1 = should_process_now()
+        flag2 = int(cfg['ALWAY_PROCESS']) == 1
+        logger.info("flag1: %d, flag2: %d", flag1, flag2)
+        if flag1 or flag2:
+            if flag1:
+                logger.info("sould process get True, process begin")
+            if flag2:
+                logger.info("always process config get 1, process begin")
+            try:
+                batch_process()
+            except:
+                logger.warn("Error when batch_process")
+                logger.warn(traceback.format_exc())
+            logger.info("after process, sleep 10")
+            time.sleep(10)
+
 
 
 
@@ -351,17 +369,14 @@ if __name__ == "__main__":
 
     # loop process or capture video
     cap.init_capture()
+
+    t5 = threading.Thread(target=loop_process_video)
+    t5.daemon = True
+    t5.start()
+
     while 1:
-        if should_process_now():
-            logger.info("sould process get True, process begin")
-            try:
-                batch_process()
-            except:
-                logger.warn("Error when batch_process")
-                logger.warn(traceback.format_exc())
-            logger.info("after process, sleep 60")
-            time.sleep(60)
-        else:
+        time.sleep(5)
+        if should_process_now() == False:
             logger.info("is night, should capture video")
             if True == cap.is_hit_sum_size_limit():
                 cap.delete_old_video()

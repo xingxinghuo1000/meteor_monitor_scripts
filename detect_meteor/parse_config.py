@@ -3,6 +3,7 @@ import sys
 import uuid
 import time
 import socket
+from logzero import logger
 
 
 def get_local_ip():
@@ -61,6 +62,7 @@ cfg = {
     'VIDEO_CAP_DIR_MAX_SIZE_BYTES': 30 * 1024 * 1024 * 1024,
     'DEVICE_NAME': '',
     'ENCODER': '',
+    'ALWAY_PROCESS': 0, 
 }
 
 
@@ -75,7 +77,7 @@ def parse():
     text = read_config_text()
 
     cfg['IP_ADDR'] = wait_get_local_ip()
-    print("IP_ADDR: ", cfg['IP_ADDR'])
+    logger.info("IP_ADDR: " + cfg['IP_ADDR'])
     cfg['LOCK_STR'] = str(uuid.uuid4())
  
     for line in text.split("\n"):
@@ -90,6 +92,7 @@ def parse():
     first_call = 0
     cfg['EXECUTOR_NUM'] = int(cfg['EXECUTOR_NUM'])
     cfg['DEBUG'] = int(cfg['DEBUG'])
+    logger.info("cfg: %s", cfg)
     return cfg
 
 
