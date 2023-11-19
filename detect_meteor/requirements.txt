@@ -2,6 +2,5 @@ imageio
 opencv-python
 numpy
 pyftpdlib
-psutil
 logzero
 suntime
