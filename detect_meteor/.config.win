@@ -12,3 +12,5 @@ LONGITUDE = "115.7"
 VIDEO_CAP_DIR_MAX_SIZE_BYTES = "30000000000"
 CAPTURE_VIDEO_PATH = "v:\meteor_monitor\origin"
 
+# set encoder
+ENCODER = "h264_qsv"
