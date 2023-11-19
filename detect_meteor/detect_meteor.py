@@ -376,6 +376,7 @@ if __name__ == "__main__":
     t5.daemon = True
     t5.start()
 
+    logger.info("ENABLE_FTP_SERVER: %d", cfg['ENABLE_FTP_SERVER'])
     if cfg['ENABLE_FTP_SERVER'] == 1:
         logger.info("start ftp server thread")
         t6 = threading.Thread(target = ftp_server.run_server)
