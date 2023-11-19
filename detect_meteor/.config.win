@@ -14,3 +14,7 @@ CAPTURE_VIDEO_PATH = "v:\meteor_monitor\origin"
 
 # set encoder
 ENCODER = "h264_qsv"
+
+# setting for ftp server, 0 is for disable, 1 is for enable
+ENABLE_FTP_SERVER = 0
+

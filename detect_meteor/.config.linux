@@ -13,4 +13,9 @@ LONGITUDE = "115.7"
 # max video capture directory size
 VIDEO_CAP_DIR_MAX_SIZE_BYTES = "70000000000"
 CAPTURE_VIDEO_PATH = "/home/xudong/share/meteor_monitor/origin"
+
+# set encoder
 ENCODER = "mjpeg"
+
+# setting for ftp server, 0 is for disable, 1 is for enable
+ENABLE_FTP_SERVER = 0
