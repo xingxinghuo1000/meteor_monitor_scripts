@@ -53,7 +53,7 @@ cfg = {
     'input_file_user': 'pi',
     'input_file_passwd': '',
     'input_file_base_path': r'w:\meteor_monitor\origin',
-    'CAPTURE_VIDEO_PATH': r'w:\meteor_monit\origin',
+    'CAPTURE_VIDEO_PATH': r'w:\meteor_monitor\origin',
     'IP_ADDR': '',
     'PYTHON_BIN': 'python',
     'LOCK_STR': '',
@@ -64,6 +64,8 @@ cfg = {
     'ENCODER': '',
     'ALWAY_PROCESS': 0, 
     'RECORD_TIME_ELAPSE_VIDEO': 0,
+    'ENABLE_FTP_SERVER': 0,
+    'FTP_BASE_DIR': r'w:\meteor_monitor',
 }
 
 
@@ -93,6 +95,7 @@ def parse():
     first_call = 0
     cfg['EXECUTOR_NUM'] = int(cfg['EXECUTOR_NUM'])
     cfg['DEBUG'] = int(cfg['DEBUG'])
+    cfg['ENABLE_FTP_SERVER'] = int(cfg['ENABLE_FTP_SERVER'])
     logger.info("cfg: %s", cfg)
     return cfg
 

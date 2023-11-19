@@ -17,4 +17,5 @@ ENCODER = "h264_qsv"
 
 # setting for ftp server, 0 is for disable, 1 is for enable
 ENABLE_FTP_SERVER = 0
+FTP_BASE_DIR = "E:\meteor_monitor"
 

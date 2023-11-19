@@ -18,6 +18,7 @@ from suntime import Sun, SunTimeException
 from logzero import logger
 
 import capture_by_ffmpeg as cap
+import ftp_server
 
 cfg = parse_config.parse()
 
@@ -373,6 +374,11 @@ if __name__ == "__main__":
     t5 = threading.Thread(target=loop_process_video)
     t5.daemon = True
     t5.start()
+
+    if cfg['ENABLE_FTP_SERVER'] == 1:
+        t6 = threading.Thread(target = ftp_server.run_server)
+        t6.daemon = True
+        t6.start()
 
     while 1:
         time.sleep(5)
