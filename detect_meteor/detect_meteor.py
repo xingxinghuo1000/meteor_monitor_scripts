@@ -269,6 +269,7 @@ def should_process_now():
     logger.info("now: " + n_str)
     logger.info("a: " + a + "     b: " + b)
     is_ni = is_night(n_str, a, b)
+    logger.info("is_night: %d", is_ni)
     if is_ni:
         return False
     else:
@@ -340,8 +341,8 @@ def loop_process_video():
             except:
                 logger.warn("Error when batch_process")
                 logger.warn(traceback.format_exc())
-            logger.info("after process, sleep 10")
-            time.sleep(10)
+            logger.info("after process, sleep 30")
+            time.sleep(30)
 
 
 
@@ -376,6 +377,7 @@ if __name__ == "__main__":
     t5.start()
 
     if cfg['ENABLE_FTP_SERVER'] == 1:
+        logger.info("start ftp server thread")
         t6 = threading.Thread(target = ftp_server.run_server)
         t6.daemon = True
         t6.start()

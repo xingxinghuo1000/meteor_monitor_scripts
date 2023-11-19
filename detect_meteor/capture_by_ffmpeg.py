@@ -114,7 +114,8 @@ def delete_old_video():
 def show_video_format_support():
     assert device_name != None
     if 'Windows' in platform_str:
-        ret = os.popen('ffmpeg -list_options true -f dshow -i video="{0}" 2>&1'.format(device_name)).read()
+        po = os.popen('ffmpeg -list_options true -f dshow -i video="{0}" 2>&1'.format(device_name))
+        ret = po.buffer.read().decode("utf-8")
         for line in ret.split("\n"):
             if 'fps=' in line:
                 logger.info("support format: " + line)
@@ -126,8 +127,9 @@ def show_video_format_support():
 
 def get_device_list():
     if 'Windows' in platform_str:
-        ret = os.popen("ffmpeg -list_devices true -f dshow -i dummy 2>&1").read()
-        logger.info("ffmpeg ret: " + ret)
+        po = os.popen("ffmpeg -list_devices true -f dshow -i dummy 2>&1")
+        ret = po.buffer.read().decode('utf-8')
+        #logger.info("ffmpeg ret: " + ret)
         li = []
         if 'Could not enumerate video devices' in ret:
             logger.error("video devices not found")
@@ -199,7 +201,7 @@ def get_support_encoders():
     cpu_info = platform.processor()
     logger.info("CPU info :" + cpu_info)
     encoder_name = None
-    if 'x86_64' in cpu_info:
+    if 'Intel64' in cpu_info:
         encoder_name = 'h264_qsv'
     elif "AMD" in cpu_info:
         encoder_name = 'h264_amf'
