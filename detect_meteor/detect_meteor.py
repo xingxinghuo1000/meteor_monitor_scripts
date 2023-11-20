@@ -41,7 +41,6 @@ def run_it():
 
 
 def process_from_queue(q):
-    assert cfg['PYTHON_BIN'] != ''
     while 1:
         full_path = q.get()
         if full_path == "poison":
@@ -63,7 +62,7 @@ def process_from_queue(q):
                 logger.info("lock file failed, then return, full_path: " + full_path)
                 continue
             #pov.process_one_video(full_path)
-            cmd = r'''{0} offline_detect_from_mp4.py --video_file="{1}" 2>&1 '''.format(cfg['PYTHON_BIN'], full_path)
+            cmd = r'''{0} detect_meteor.py --video_file="{1}" 2>&1 '''.format(cfg['PYTHON_BIN'], full_path)
             logger.info("run cmd: " + cmd)
             text = os.popen(cmd).read()
             logger.info("process ret: " + text)
@@ -345,10 +344,19 @@ def loop_process_video():
             time.sleep(30)
 
 
+def check_python_bin():
+    assert cfg['PYTHON_BIN'] != ''
+    bin = cfg['PYTHON_BIN']
+    cmd = '%s --version' %(bin)
+    ret = os.popen(cmd).read()
+    assert 'Python 3' in ret
+    return True
+
 
 
 if __name__ == "__main__":
     assert True == cap.check_ffmpeg()
+    assert True == check_python_bin()
     clean_temp_dir()
     if '--debug' in sys.argv:
         cfg['DEBUG'] = 1
