@@ -44,6 +44,7 @@ def init_capture():
     device_name = li[0]
     if 'Linux' in platform_str:
         device_name = cfg['DEVICE_NAME']
+    show_video_format_support()
 
 def check_ffmpeg():
     text = os.popen("ffmpeg --help 2>&1").read()
@@ -116,12 +117,13 @@ def show_video_format_support():
     if 'Windows' in platform_str:
         po = os.popen('ffmpeg -list_options true -f dshow -i video="{0}" 2>&1'.format(device_name))
         ret = po.buffer.read().decode("utf-8")
+        logger.info("show device format: %s", ret)
         for line in ret.split("\n"):
             if 'fps=' in line:
                 logger.info("support format: " + line)
     if 'Linux' in platform_str:
         ret = os.popen(' ffmpeg -hide_banner -f v4l2 -list_formats all -i {0}').format(device_name).read()
-        logger.info("support format: " + line)
+        logger.info("show device format: %s", ret)
 
 
 
@@ -161,7 +163,7 @@ def record_one_video_file():
     full_log_name = full_name + ".log"
     start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if 'Windows' in platform_str:
-        cmd = 'ffmpeg -f dshow -i video="{0}" -c:v {1}  -b:v 6000k -minrate 5000k -maxrate 8000k  -vf eq=brightness=0.1  -s 1920x1080 -r 15  -t 600 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name, full_log_name)
+        cmd = 'ffmpeg -f dshow -i video="{0}" -c:v {1}  -b:v 10000k  -vf eq=brightness=0.1  -s 1920x1080 -r 30  -t 300 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name, full_log_name)
     if 'Linux' in platform_str:
         cmd = 'ffmpeg -i "{0}" -c:v {1}  -b:v 20000k -vf eq=brightness=0.1 -s 1920x1080 -r 30  -t 300 {2} >{3} 2>&1 '.format(device_name, encoder_name, full_name, full_log_name)
     logger.info("cmd: " + cmd)
@@ -196,7 +198,7 @@ def get_file_name_by_current_time():
 
 def get_support_encoders():
     ret = os.popen("ffmpeg  configure -encoders 2>&1").read()
-    #logger.info("encoders ret: " + ret)
+    logger.info("encoders ret: " + ret)
     assert 'h264_qsv' in ret
     cpu_info = platform.processor()
     logger.info("CPU info :" + cpu_info)
