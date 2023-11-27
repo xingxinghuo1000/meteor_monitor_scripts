@@ -49,6 +49,27 @@ windows系统,win10 win11. 小主机, cpu 2.4GHz, 4核心.
 如果是树莓派, 且编译了带h264_omx编码的ffmpeg, 则编码器使用 h264_omx
 
 
+### 安装ffmpeg
+
+本程序依赖ffmpeg命令, 
+
+Windows环境,需要到ffmpeg官网下载ffmpeg可执行程序, 下载压缩包,解压缩到某个目录, 并将目录添加到环境变量. 如何验证安装是否成功, 可以打开cmd, 输入 ffmpeg -v 看看是否能正常看到输出的版本号
+
+Linux环境, sudo yum install ffmpeg 或者 sudo apt install ffmpeg, 验证方法, 在shell中输入 ffmpeg -v 看看是否正常显示版本号
+
+如果是树莓派, 则需要手工编译ffmpeg, 启用h264_omx编码, 比较麻烦, 不推荐.
+
+
+### 插入usb摄像头
+
+将usb摄像头插入主机的usb口, 执行下面的命令, 检查系统是否能正常识别摄像头
+
+Windows中, 打开cmd 输入  ffmpeg -list_devices true -f dshow -i dummy 看看返回结果
+
+Linux系统中, 在shell中输入  ffmpeg -hide_banner -sources v4l2 看看返回结果
+
+
+
 ## 如何修改配置文件.config
 
 参考.config.xx文件,对应你的操作系统, 配置 文件中都有说明
