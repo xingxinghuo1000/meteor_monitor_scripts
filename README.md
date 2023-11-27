@@ -44,6 +44,8 @@ sony IMX291 以上. 摄像头CMOS尺寸太小,噪点会比较多. 所以推荐�
 
 如果您在Ubuntu环境,安装好了显卡驱动程序, Intel核心显卡可以尝试 h264_qsv 编码, nvdia显卡尝试 h264_nvenc, amd显卡尝试 h264_amf
 
+如果是树莓派, 且编译了带h264_omx编码的ffmpeg, 则编码器使用 h264_omx
+
 
 ## 如何配置
 
