@@ -144,8 +144,11 @@ Linux下, crontable中配置 */5 * * * *  cd /home/yourname/workspace/meteor_mon
 
 问题: 在哪个目录新建 遮罩图像?
 
-答: 在视频目标输出目录, 在配置文件的 base_output_path 选项
+答: 在视频目标输出目录, 在配置文件的 base_output_path 选项, 该路径由您指定
 
+问题: 遮罩图像黑色白色代表什么意思?
+
+答: 黑色表示要遮盖的部分, 白色表示要检测的部分
 
 
 
