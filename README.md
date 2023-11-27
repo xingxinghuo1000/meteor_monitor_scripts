@@ -53,7 +53,9 @@ windows系统,win10 win11. 小主机, cpu 2.4GHz, 4核心.
 
 本程序依赖ffmpeg命令, 
 
-Windows环境,需要到ffmpeg官网下载ffmpeg可执行程序, 下载压缩包,解压缩到某个目录, 并将目录添加到环境变量. 如何验证安装是否成功, 可以打开cmd, 输入 ffmpeg -v 看看是否能正常看到输出的版本号
+我目前只测试过 4.x.x 版本的ffmpeg, 不能保证 5.x 和 6.x也能正常工作
+
+Windows环境,需要到ffmpeg官网(https://ffmpeg.org/download.html) 下载ffmpeg可执行程序, 下载压缩包,解压缩到某个目录, 并将目录添加到环境变量. 如何验证安装是否成功, 可以打开cmd, 输入 ffmpeg -v 看看是否能正常看到输出的版本号
 
 Linux环境, sudo yum install ffmpeg 或者 sudo apt install ffmpeg, 验证方法, 在shell中输入 ffmpeg -v 看看是否正常显示版本号
 
