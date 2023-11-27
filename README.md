@@ -136,6 +136,18 @@ Windows下, 右键点击 offline_detect_from_mp4.bat, 发送到桌面快捷方�
 Linux下, crontable中配置 */5 * * * *  cd /home/yourname/workspace/meteor_monitor_script/detect_meteor && sh run.sh 
 
 
+### 步骤5 可选
+
+配置 mask-1280-720.bmp 遮罩图像, 目的是排除掉画面中的一些非天空部分, 这部分可能会引起False Positive, 流星的误报
+
+比如 画面中远处楼宇的灯光变化, 可能会让程序以为是有画面变化
+
+问题: 在哪个目录新建 遮罩图像?
+
+答: 在视频目标输出目录, 在配置文件的 base_output_path 选项
+
+
+
 
 ## 原理介绍
 
@@ -158,7 +170,7 @@ ffmpeg 支持多种编码格式, h264支持多种硬件加速, 比如Intel核心
 
 步骤1
 
-使用帧差法,识别变化
+使用典型的opencv 运动检测算法: 帧差法, 识别画面的变化
 
 步骤2
 
