@@ -71,3 +71,45 @@ windows系统,win10 win11. 小主机, cpu 2.4GHz, 4核心.
 根据ffmpeg显示出来的信息, 查看摄像头支持哪些分辨率和fps. 配置到.config 文件中
 
 
+
+## 配置Python环境
+
+版本: 推荐使用Python 3.10及以上
+
+
+### 步骤1
+
+新建virtual env. 在 detect_meteor目录下, 执行如下命令
+
+windows下, python3 -m venv venv
+
+Linux下, python3 -m venv venv
+
+
+### 步骤2
+
+安装依赖
+
+windows下, 打开 cmd,  在 detect_meteor 目录下, 执行命令  .\venv\Script\python  -m pip install -r requirement.txt
+
+Linux下, 在 detect_meteor目录下, 执行命令 ./venv/bin/python -m pip install -r requirement.txt
+
+
+### 步骤3
+
+运行本程序
+
+windows下, 双击 offline_detect_from_mp4.bat 
+
+Linux下, 在detect_meteor目录下, 执行 sh run.sh
+
+
+### 步骤4
+
+配置开机自动启动, 
+
+Windows下, 右键点击 offline_detect_from_mp4.bat, 发送到桌面快捷方式, 将 快捷方式,复制到 开始菜单的 启动 目录
+
+Linux下, crontable中配置 */5 * * * *  cd /home/yourname/workspace/meteor_monitor_script/detect_meteor && sh run.sh 
+
+
