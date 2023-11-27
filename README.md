@@ -161,6 +161,8 @@ Linux下, crontable中配置 */5 * * * *  cd /home/yourname/workspace/meteor_mon
 
 ffmpeg 支持多种编码格式, h264支持多种硬件加速, 比如Intel核心显卡, nvdia显卡, AMD显卡
 
+备注: 曾经使用过一个方案 使用windows自带的相机app,进行录像. 这个方案不够稳定, 已被废弃. 该方案使用sikuli进行UI自动化操作, 非常不稳定.
+
 
 ### 离线分析流星
 
