@@ -6,7 +6,7 @@
 目标是代替ufohd2capture，可以用于配置比较低的小机器
 相对于ufocapturehd2的优势， 需要配置较低
 
-在2.0GHz的2核心4线程 cpu上，可以跑30FPS 1920x1080 视频
+在2.0GHz的2核心4线程 cpu(Intel J2900)上，可以跑30FPS 1920x1080 视频
 
 
 
