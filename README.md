@@ -136,3 +136,36 @@ Windows下, 右键点击 offline_detect_from_mp4.bat, 发送到桌面快捷方�
 Linux下, crontable中配置 */5 * * * *  cd /home/yourname/workspace/meteor_monitor_script/detect_meteor && sh run.sh 
 
 
+
+## 原理介绍
+
+
+### 高效的录制mp4视频
+
+使用ffmpeg, 高效录制视频. 这部分,我没有足够能力使用python实现, 所以借助ffmpeg的能力
+
+ffmpeg 支持多种编码格式, h264支持多种硬件加速, 比如Intel核心显卡, nvdia显卡, AMD显卡
+
+
+### 离线分析流星
+
+为什么不做实时分析?
+
+因为硬件性能不够. 我的目的是在低配置的硬件上,运行本程序. 如果您的硬件性能已经很强悍, 则建议直接使用ufohd2
+
+
+离线分析的原理
+
+步骤1
+
+使用帧差法,识别变化
+
+步骤2
+
+根据一些特征,过滤掉不是流星的东西, 比如蝙蝠, 小飞虫等.
+
+步骤3
+
+把剩余的部分, 使用ffmpeg 切片, 存储起来
+
+
