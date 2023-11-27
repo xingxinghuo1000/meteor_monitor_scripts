@@ -49,7 +49,7 @@ windows系统,win10 win11. 小主机, cpu 2.4GHz, 4核心.
 如果是树莓派, 且编译了带h264_omx编码的ffmpeg, 则编码器使用 h264_omx
 
 
-## 如何配置
+## 如何修改配置文件.config
 
 参考.config.xx文件,对应你的操作系统, 配置 文件中都有说明
 
