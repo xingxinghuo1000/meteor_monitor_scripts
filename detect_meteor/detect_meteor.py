@@ -16,7 +16,9 @@ import parse_config
 import store_lib
 import process_one_video as pov
 
-make_log_dir()
+
+if not os.path.exists("logs"):
+    os.makedirs("logs")
 logzero.logfile("logs/log-default.log", maxBytes=10 * 1024 * 1024, backupCount=5)
 
 
@@ -304,10 +306,6 @@ def check_python_bin():
     assert 'Python 3' in ret
     return True
 
-
-def make_log_dir():
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
 
 
 if __name__ == "__main__":
