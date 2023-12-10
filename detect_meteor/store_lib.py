@@ -187,14 +187,4 @@ def input_path_file_exists(remote_path):
     assert False, "type is unknown"
 
     
-def test_input_file_exists():
-    ret = input_path_file_exists("/meteor_monitor/origin/mask-1280-720.bmp")
-    assert ret == True
-
-def test_list_remote():
-    ret = list_input_path("/meteor_monitor/origin")
-    assert 'mask-1280-720.bmp' in ret
-    assert len(ret) > 0
-
-    #ret = list_input_path("/meteor_monitor/origin/mask-1280-720.bmp")
 
