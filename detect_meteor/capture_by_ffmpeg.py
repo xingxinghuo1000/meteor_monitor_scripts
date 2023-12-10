@@ -42,8 +42,9 @@ def init_capture():
     li = get_device_list()
     assert len(li) > 0
     device_name = li[0]
-    if 'Linux' in platform_str:
+    if cfg['DEVICE_NAME'] != None and cfg['DEVICE_NAME'] != '':
         device_name = cfg['DEVICE_NAME']
+    logger.info("use video device: %s", device_name)
     show_video_format_support()
 
 def check_ffmpeg():

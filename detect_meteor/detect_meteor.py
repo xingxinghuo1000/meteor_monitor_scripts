@@ -14,7 +14,6 @@ import util
 import parse_config
 import store_lib
 import process_one_video as pov
-from suntime import Sun, SunTimeException
 from logzero import logger
 
 import capture_by_ffmpeg as cap
