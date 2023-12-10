@@ -15,6 +15,8 @@ import util
 import parse_config
 import store_lib
 import process_one_video as pov
+
+make_log_dir()
 logzero.logfile("logs/log-default.log", maxBytes=10 * 1024 * 1024, backupCount=5)
 
 
@@ -309,7 +311,6 @@ def make_log_dir():
 
 
 if __name__ == "__main__":
-    make_log_dir()
     assert True == cap.check_ffmpeg()
     assert True == check_python_bin()
     clean_temp_dir()
