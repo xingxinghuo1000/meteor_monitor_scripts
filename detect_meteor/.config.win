@@ -5,6 +5,11 @@ base_output_type = "local"
 base_output_path = "E:\meteor_monitor\meteor_store"
 EXECUTOR_NUM = 1
 PYTHON_BIN = ".\venv\Scripts\python "
+
+# camera device name. if set to empty, program will use first found device
+# if you have multiple cameras, you can specify which to use
+DEVICE_NAME = ""
+
 # your location
 LATITUDE = "39.4"
 LONGITUDE = "115.7"
