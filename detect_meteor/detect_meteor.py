@@ -4,6 +4,7 @@ import shutil
 import time
 import datetime
 import logzero
+from logzero import logger
 import traceback
 import threading
 import queue
@@ -14,7 +15,8 @@ import util
 import parse_config
 import store_lib
 import process_one_video as pov
-from logzero import logger
+logzero.logfile("logs/log-default.log", maxBytes=10 * 1024 * 1024, backupCount=5)
+
 
 import capture_by_ffmpeg as cap
 import ftp_server
@@ -301,8 +303,13 @@ def check_python_bin():
     return True
 
 
+def make_log_dir():
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
 
 if __name__ == "__main__":
+    make_log_dir()
     assert True == cap.check_ffmpeg()
     assert True == check_python_bin()
     clean_temp_dir()

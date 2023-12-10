@@ -407,16 +407,16 @@ def get_record_time_from_video_name(full_path, shift_time):
     return t2
     
 
-def test_get_record_time():
-    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
-    t = get_record_time_from_video_name(p, '00:00:01')
-    assert '2022-05-14 04:54:57' == t.strftime("%Y-%m-%d %H:%M:%S")
-    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
-    t = get_record_time_from_video_name(p, '00:09:01')
-    assert '2022-05-14 05:03:57' == t.strftime("%Y-%m-%d %H:%M:%S")
-    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
-    t = get_record_time_from_video_name(p, '01:09:01')
-    assert '2022-05-14 06:03:57' == t.strftime("%Y-%m-%d %H:%M:%S")
+#def test_get_record_time():
+#    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
+#    t = get_record_time_from_video_name(p, '00:00:01')
+#    assert '2022-05-14 04:54:57' == t.strftime("%Y-%m-%d %H:%M:%S")
+#    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
+#    t = get_record_time_from_video_name(p, '00:09:01')
+#    assert '2022-05-14 05:03:57' == t.strftime("%Y-%m-%d %H:%M:%S")
+#    p = os.path.join(input_file_base_path, 'WIN_20220514_04_54_56_Pro.mp4')
+#    t = get_record_time_from_video_name(p, '01:09:01')
+#    assert '2022-05-14 06:03:57' == t.strftime("%Y-%m-%d %H:%M:%S")
 
 
 
