@@ -2,6 +2,8 @@ import os
 import traceback
 import socket
 import datetime
+import traceback
+from suntime import Sun, SunTimeException
 from logzero import logger
 
 
@@ -13,13 +15,25 @@ def safe_os_remove(full_path):
             msg = traceback.format_exc()
             logger.warn("error when try remove: " + msg)
 
+def is_port_connect(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.settimeout(0.2)
+            s.connect(('127.0.0.1', port))
+        except Exception:
+            # 建联失败
+            return False
+        s.close()
+        return True
 
 def is_port_open(port):
-    with socket.socket(socket.AF_IET, socket.SOCK_STREAM) as s:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.bind(('localhost', port))
+            logger.info("port %d  is usable ", port)
             return True
-        except OSError:
+        except:
+            logger.info("bind port error: %s", traceback.format_exc())
             return False
 
 
