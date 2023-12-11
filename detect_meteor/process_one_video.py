@@ -489,14 +489,14 @@ def test_merge_segments():
     assert  [[500, 500],[1500,1500],[2500,2500]] == merge_segments(segments, 50)
 
 def merge_segments(segments, fps):
+    logger.info("[merge segments] segments input: %s", segments)
     last_begin = -1
     last_end = -1
     out_segments = []
     if len(segments) == 0:
         return out_segments
     # if distance between 2 segments is too near, then merge them
-    for i in range(len(segments)):
-        seg = segments[i]
+    for seg in segments:
         begin, end = seg
         if last_end == -1:
             last_begin = begin
@@ -506,10 +506,12 @@ def merge_segments(segments, fps):
             if begin - last_end < 5 * fps:
                 last_end = end
             else:
+                logger.info("[merge segments] 11111 one segment lenth: %d,  from %d to %d",  last_end - last_begin, last_begin, last_end)
                 out_segments.append([last_begin, last_end])
                 last_begin = begin
                 last_end = end
     if segments[-1][1] == last_end:
+        logger.info("[merge segments] 22222 one segment lenth: %d,  from %d to %d",  last_end - last_begin, last_begin, last_end)
         out_segments.append([last_begin, last_end])
     return out_segments
 
@@ -552,7 +554,9 @@ def calc_split_range(index, frame_count, fps, time_sec, data_obj):
     param_list = []
     data_obj['filter_segments'] = []
     for seg in new_segments:
-        if seg[0] == seg[1]:
+        seg_len = seg[1] - seg[0]
+        logger.info("[calc split range] seg_len: %d,  seg: %s", seg_len, seg)
+        if seg_len < 2:
             msg = "[filter segment] reason: single diff frame. seg: " + str(seg)
             logger.info(msg)
             data_obj['filter_segments'].append(msg)
