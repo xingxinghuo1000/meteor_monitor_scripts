@@ -97,21 +97,21 @@ In Linux system, enter ffmpeg -hide_banner -sources v4l2 in the shell to see the
 
 
 
-## How to modify the configuration file .config
+## How to modify the configuration file "config.ini"
 
-Refer to the .config.xx file, which corresponds to your operating system. There are instructions in the configuration file.
+Refer to the "config.ini.xx" file, which corresponds to your operating system. There are instructions in the configuration file.
                                                                                                                                    
-For example, in win11 system, you can refer to .config.win
+For example, in win11 system, you can refer to "config.ini.win"
  
-If it is an Ubuntu system, you can refer to .config.linux
+If it is an Ubuntu system, you can refer to "config.ini.linux"
 
 
 
                                                                                                                                    
-## Description of .config file
+## Description of "config.ini" file
 
 
-To view specific instructions, you need to look at the existing remarks in the .config file. Only the more critical contents are listed here.
+To view specific instructions, you need to look at the existing remarks in the "config.ini" file. Only the more critical contents are listed here.
 
 
 
@@ -215,7 +215,7 @@ For Windows systems, double-click show_video_format_support.bat in the detect_me
 
 For linux systems, cd detect_meteor, sh show_video_format_support.sh
                                                                                                                                    
-Based on the displayed information, check which resolutions and fps the camera supports. Configure it in the .config file
+Based on the displayed information, check which resolutions and fps the camera supports. Configure it in the "config.ini" file
                                                                                                                                    
 
 
