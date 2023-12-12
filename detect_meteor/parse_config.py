@@ -1,9 +1,11 @@
 import os
 import sys
 import uuid
+import json
 import time
 import socket
 from logzero import logger
+import configparser
 
 
 def get_local_ip():
@@ -41,31 +43,6 @@ def read_config_text():
     return text
 
 cfg = {
-    'DEBUG': 0,
-    'EXECUTOR_NUM': 4,
-    'base_output_type': 'local',
-    'base_output_host': '',
-    'base_output_user': 'pi',
-    'base_output_passwd': '',
-    'base_output_path': r'w:\meteor_monitor\meteor_store',
-    'input_file_type': 'local',
-    'input_file_host': '',
-    'input_file_user': 'pi',
-    'input_file_passwd': '',
-    'input_file_base_path': r'w:\meteor_monitor\origin',
-    'CAPTURE_VIDEO_PATH': r'w:\meteor_monitor\origin',
-    'IP_ADDR': '',
-    'PYTHON_BIN': 'python',
-    'LOCK_STR': '',
-    'LATITUDE': 40,
-    'LONGITUDE': 120,
-    'VIDEO_CAP_DIR_MAX_SIZE_BYTES': 30 * 1024 * 1024 * 1024,
-    'DEVICE_NAME': '',
-    'ENCODER': '',
-    'ALWAY_PROCESS': 0, 
-    'RECORD_TIME_ELAPSE_VIDEO': 0,
-    'ENABLE_FTP_SERVER': 0,
-    'FTP_BASE_DIR': r'w:\meteor_monitor',
 }
 
 
@@ -77,26 +54,53 @@ def parse():
     if first_call == 0:
         return cfg
     
-    text = read_config_text()
+    config = configparser.ConfigParser()
+    config.read("config.ini", encoding="utf-8")
+
+
 
     cfg['IP_ADDR'] = wait_get_local_ip()
     logger.info("IP_ADDR: " + cfg['IP_ADDR'])
     cfg['LOCK_STR'] = str(uuid.uuid4())
  
-    for line in text.split("\n"):
-        if line.startswith("#"):
-            continue
-        for k in cfg:
-            if k in line:
-                v = line.split("=")[1].strip(' "')
-                cfg[k] = v
-                print("resolve param from .config file, k:", k, "  v:", v)
+
 
     first_call = 0
-    cfg['EXECUTOR_NUM'] = int(cfg['EXECUTOR_NUM'])
-    cfg['DEBUG'] = int(cfg['DEBUG'])
-    cfg['ENABLE_FTP_SERVER'] = int(cfg['ENABLE_FTP_SERVER'])
-    logger.info("cfg: %s", cfg)
+    cfg['DEBUG'] = int(config.get("DEFAULT", "DEBUG", fallback="0"))
+    cfg['EXECUTOR_NUM'] = int(config.get("DEFAULT", "EXECUTOR_NUM", fallback="1"))
+    cfg['base_output_type'] = config.get("DEFAULT", "base_output_type", fallback="local")
+    cfg['base_output_host'] = config.get("DEFAULT", "base_output_host", fallback="")
+    cfg['base_output_user'] = config.get("DEFAULT", "base_output_user", fallback="admin")
+    cfg['base_output_passwd'] = config.get("DEFAULT", "base_output_passwd", fallback="")
+    cfg['base_output_path'] = config.get("DEFAULT", "base_output_path")
+
+    cfg['input_file_type'] = config.get("DEFAULT", "input_file_type", fallback="local")
+    cfg['input_file_host'] = config.get("DEFAULT", "input_file_host", fallback="")
+    cfg['input_file_user'] = config.get("DEFAULT", "input_file_user", fallback="admin")
+    cfg['input_file_passwd'] = config.get("DEFAULT", "input_file_passwd", fallback="")
+    cfg['input_file_base_path'] = config.get("DEFAULT", "input_file_base_path")
+
+    cfg['CAPTURE_VIDEO_PATH'] = config.get("DEFAULT", "CAPTURE_VIDEO_PATH")
+    cfg['PYTHON_BIN'] = config.get("DEFAULT", "PYTHON_BIN")
+
+    cfg['LATITUDE'] = float(config.get("DEFAULT", "LATITUDE"))
+    cfg['LONGITUDE'] = float(config.get("DEFAULT", "LONGITUDE"))
+
+    cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES'] = int(config.get("DEFAULT", "VIDEO_CAP_DIR_MAX_SIZE_BYTES"))
+
+    cfg['DEVICE_NAME'] = config.get("DEFAULT", "DEVICE_NAME", fallback="")
+    
+    cfg['ENCODER'] = config.get("DEFAULT", "ENCODER")
+
+    cfg['ALWAY_PROCESS'] = int(config.get("DEFAULT", "ALWAY_PROCESS", fallback="0"))
+    cfg['RECORD_TIME_ELAPSE_VIDEO'] = int(config.get("DEFAULT", "RECORD_TIME_ELAPSE_VIDEO", fallback="0"))
+    cfg['ENABLE_FTP_SERVER'] = int(config.get("DEFAULT", "ENABLE_FTP_SERVER", fallback="0"))
+    cfg['FTP_BASE_DIR'] = config.get("DEFAULT", "FTP_BASE_DIR", fallback="")
+
+    if cfg['ENABLE_FTP_SERVER']:
+        assert cfg['FTP_BASE_DIR'] != ""
+
+    logger.info("cfg: %s", json.dumps(cfg, indent=2, ensure_ascii=False))
     return cfg
 
 

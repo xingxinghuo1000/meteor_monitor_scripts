@@ -1,6 +1,6 @@
 *.log
 *.log.*
-.config
+config.ini
 __pycache__
 .pytest_cache
 *.pyc

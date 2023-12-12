@@ -642,6 +642,7 @@ def write_analyze(full_path, text):
 def test_write_analyze_file():
     full_path = "1.mp4"
     write_analyze(full_path, 'text content')
+    time.sleep(0.1)
     assert store_lib.input_path_file_exists("1.mp4.analyze")
     with open("1.mp4.analyze") as f1:
         text = f1.read()

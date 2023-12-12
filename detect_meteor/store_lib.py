@@ -4,10 +4,10 @@ import shutil
 import parse_config
 import traceback
 import time
+from logzero import logger
 
 cfg = parse_config.parse()
 
-#print(cfg)
 
 def get_and_login_ftp_src():
     ftp = ftplib.FTP()
@@ -49,7 +49,7 @@ def gen_local_temp_file():
         try:
             os.makedirs("temp")
         except:
-            traceback.print_exc()
+            logger.error(traceback.format_exc())
     file_name = os.path.join("temp", str(time.time()) + ".tmp")
     return file_name
 
@@ -76,6 +76,7 @@ def write_file_to_input_path(remote_file, byte_content):
         os.remove(tmp_file)
         return
     if cfg['input_file_type'] == 'local':
+        logger.info("write file to: %s", remote_file)
         f = open(remote_file, 'wb')
         f.write(byte_content)
         f.close()
@@ -182,6 +183,7 @@ def input_path_file_exists(remote_path):
             return False
 
     if cfg['input_file_type'] == 'local':
+        logger.info("check file full path exists:  %s", remote_path)
         return os.path.exists(remote_path)
 
     assert False, "type is unknown"
