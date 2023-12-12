@@ -1,6 +1,9 @@
 #!/bin/bash
 
+set -x
+PYTHON_BIN=`cat .config | grep PYTHON_BIN | awk -F"=" '{print $2}' | awk -F'"' '{print $2}'`
 
-./venv/bin/python3 detect_meteor.py 2>&1 | cronolog  logs/run.%Y-%m-%d.log  &
+
+$PYTHON_BIN detect_meteor.py 2>&1 | cronolog  logs/run.%Y-%m-%d.log  &
 
 

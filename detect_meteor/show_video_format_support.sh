@@ -1,3 +1,5 @@
+set -x
+PYTHON_BIN=`cat .config | grep PYTHON_BIN | awk -F"=" '{print $2}' | awk -F'"' '{print $2}'`
 
-./venv/bin/python show_video_format_support.py
+$PYTHON_BIN  show_video_format_support.py
 
