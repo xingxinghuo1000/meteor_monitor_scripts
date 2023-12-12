@@ -100,7 +100,7 @@ def parse():
     if cfg['ENABLE_FTP_SERVER']:
         assert cfg['FTP_BASE_DIR'] != ""
 
-    logger.info("cfg: %s", json.dumps(cfg, indent=2, ensure_ascii=False))
+    logger.info("after parse config, cfg: %s", json.dumps(cfg, indent=2, ensure_ascii=False))
     return cfg
 
 
