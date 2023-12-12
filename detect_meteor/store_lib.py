@@ -183,8 +183,9 @@ def input_path_file_exists(remote_path):
             return False
 
     if cfg['input_file_type'] == 'local':
-        logger.info("check file full path exists:  %s", remote_path)
-        return os.path.exists(remote_path)
+        flag = os.path.exists(remote_path)
+        logger.info("check file full path exists:  %s, return: %d", remote_path, flag)
+        return flag
 
     assert False, "type is unknown"
 
