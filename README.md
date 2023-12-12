@@ -98,18 +98,18 @@ Linux系统中, 在shell中输入  ffmpeg -hide_banner -sources v4l2 看看返�
 
 
 
-## 如何修改配置文件.config
+## 如何修改配置文件 config.ini
 
-参考.config.xx文件,对应你的操作系统, 配置 文件中都有说明
+参考config.ini.xx文件,对应你的操作系统, 配置 文件中都有说明
 
-比如win11系统,可以参考.config.win
+比如win11系统,可以参考config.ini.win
 
-如果是Ubuntu系统,可以参考.config.linux
+如果是Ubuntu系统,可以参考config.ini.linux
 
 
-## .config 文件的说明
+## config.ini 文件的说明
 
-要查看具体说明,需要看.config文件中已有的备注内容, 这里仅列出比较关键的内容
+要查看具体说明,需要看config.ini文件中已有的备注内容, 这里仅列出比较关键的内容
 
 ### DEVICE_NAME 
 
@@ -211,7 +211,7 @@ ftp服务的根目录
 
 对于linux系统, cd detect_meteor, sh show_video_format_support.sh
 
-根据显示出来的信息, 查看摄像头支持哪些分辨率和fps. 配置到.config 文件中
+根据显示出来的信息, 查看摄像头支持哪些分辨率和fps. 配置到 config.ini 文件中
 
 
 
