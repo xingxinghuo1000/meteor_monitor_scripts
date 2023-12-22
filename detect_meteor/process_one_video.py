@@ -84,7 +84,13 @@ def is_rectangle_masked(rect, i_m):
         x0, y0 = p1
         # one of the 4 points hit mask
         # 0 means black color
-        if i_m[x0, y0] == 0:
+        logger.info("point x0,y0 : %s", (x0, y0))
+        logger.info("im shape : %s", i_m.shape)
+        logger.info("point value in mask: %s", i_m[y0, x0])
+        point_in_mask = i_m[y0, x0]
+        tmp_v = int(point_in_mask[0]) + int(point_in_mask[1]) + int(point_in_mask[2])
+        value = int(tmp_v / 3)
+        if value == 0:
             return True
     # all rectangle is out of mask
     return False
@@ -96,6 +102,10 @@ def test_rectangle_masked():
     rect = (10, 10, 20, 20)
     flag1 = is_rectangle_masked(rect, img1)
     assert flag1 == False
+
+    rect = (1260, 700, 10, 10)
+    flag1 = is_rectangle_masked(rect, img1)
+    assert flag1 == True
 
 
 def convert_img(frame):
