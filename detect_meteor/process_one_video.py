@@ -70,6 +70,34 @@ def mask_img(origin_path, img, w, h):
     else:
         return img
 
+
+# one rectagle has four points,
+# if one point in mask_img, return True
+# if none of the point in mask_img, return False
+def is_rectangle_masked(rect, i_m):
+    x, y, w, h = rect
+    p1 = x, y
+    p2 = x + w, y
+    p3 = x, y + h
+    p4 = x + w, y + h
+    for p in [p1, p2, p3, p4]:
+        x0, y0 = p1
+        # one of the 4 points hit mask
+        # 0 means black color
+        if i_m[x0, y0] == 0:
+            return True
+    # all rectangle is out of mask
+    return False
+
+
+def test_rectangle_masked():
+
+    img1 = cv2.imread(os.path.join("test_data", "mask-1280-720.bmp"))
+    rect = (10, 10, 20, 20)
+    flag1 = is_rectangle_masked(rect, img1)
+    assert flag1 == False
+
+
 def convert_img(frame):
     resized = cv2.resize(frame,(512,512))
     gray_lwpCV = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
@@ -196,6 +224,9 @@ def process_one_frame(data_obj):
                 }
                 filter_info_list.append(item)
                 continue
+            if is_rectangle_masked(cv2.boundingRect(c), mask_img):
+                logger.info("rectangle in mask, (x,y,w,h): (%d,%d,%d,%d) ", x, y, w, h)
+                pass
             cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 2)
             logger.info("find diff, frame index: " + str(cnt) + ' rectangle: ' +  str((x,y,w,h)))
 
