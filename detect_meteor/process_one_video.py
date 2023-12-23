@@ -14,6 +14,8 @@ from logzero import logger
 
 cfg = parse_config.parse()
 
+MIDDLE_WIDTH = 512
+MIDDLE_HEIGHT = 512
 MAX_DIFF_FRAME_CNT = 100
 split_limit = 30
 area_threh = 5
@@ -79,12 +81,23 @@ def is_rectangle_masked(rect, i_m):
     if has_mask == 0:
         return False
     x, y, w, h = rect
+    origin_width = i_m.shape[1]
+    origin_height = i_m.shape[0]
+    ZOOM = MIDDLE_WIDTH/origin_width
+    x = int(x/ZOOM)
+    y = int(y/ZOOM)
+    w = int(w/ZOOM)
+    h = int(w/ZOOM)
     p1 = x, y
     p2 = x + w, y
     p3 = x, y + h
     p4 = x + w, y + h
     for p in [p1, p2, p3, p4]:
         x0, y0 = p1
+        if x0 >= origin_width:
+            x0 = origin_width - 1
+        if y0 >= origin_height:
+            y0 = origin_height
         # one of the 4 points hit mask
         # 0 means black color
         #logger.info("point x0,y0 : %s", (x0, y0))
@@ -112,7 +125,7 @@ def test_rectangle_masked():
 
 
 def convert_img(frame):
-    resized = cv2.resize(frame,(512,512))
+    resized = cv2.resize(frame,(MIDDLE_WIDTH, MIDDLE_HEIGHT))
     gray_lwpCV = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
     #cv2.imshow('Frame',gray_lwpCV)
     gray_lwpCV = cv2.GaussianBlur(gray_lwpCV, (5, 5), 0)
@@ -206,7 +219,7 @@ def process_one_frame(data_obj):
             if area < area_threh :
                 #filter_info_list.append(item)
                 continue
-            if area > int(512*512*0.5):
+            if area > int(MIDDLE_WIDTH*MIDDLE_HEIGHT*0.5):
                 logger.info("area: " + str(area))
                 logger.info("SKIP this rectangle, filter by area too big")
                 item = {
