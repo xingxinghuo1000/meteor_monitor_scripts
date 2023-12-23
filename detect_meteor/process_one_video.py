@@ -75,6 +75,8 @@ def mask_img(origin_path, img, w, h):
 # if one point in mask_img, return True
 # if none of the point in mask_img, return False
 def is_rectangle_masked(rect, i_m):
+    if i_m == None:
+        return False
     x, y, w, h = rect
     p1 = x, y
     p2 = x + w, y
@@ -234,7 +236,7 @@ def process_one_frame(data_obj):
                 }
                 filter_info_list.append(item)
                 continue
-            if is_rectangle_masked(cv2.boundingRect(c), mask_img):
+            if is_rectangle_masked(cv2.boundingRect(c), img_mask):
                 logger.info("rectangle in mask, (x,y,w,h): [%d,%d,%d,%d] ", x, y, w, h)
                 logger.info("SKIP this rectangle, border hit mask. [%d, %d, %d, %d]", x, y, w, h)
                 item = {
