@@ -75,7 +75,7 @@ def mask_img(origin_path, img, w, h):
 # if one point in mask_img, return True
 # if none of the point in mask_img, return False
 def is_rectangle_masked(rect, i_m):
-    if i_m == None:
+    if has_mask == 0:
         return False
     x, y, w, h = rect
     p1 = x, y
