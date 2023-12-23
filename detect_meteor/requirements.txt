@@ -5,3 +5,4 @@ pyftpdlib
 logzero
 suntime
 pytest
+configparser
