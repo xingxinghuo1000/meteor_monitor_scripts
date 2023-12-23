@@ -53,6 +53,7 @@ def mask_img(origin_path, img, w, h):
             assert os.path.exists(tmp_bmp_file)
             img_mask = cv2.imread(tmp_bmp_file)
             has_mask = 1
+            logger.info("load mask file done")
             util.safe_os_remove(tmp_bmp_file)
             if w != 1280:
                 img_mask = cv2.resize(img_mask, (w,h))
@@ -86,9 +87,9 @@ def is_rectangle_masked(rect, i_m):
         x0, y0 = p1
         # one of the 4 points hit mask
         # 0 means black color
-        logger.info("point x0,y0 : %s", (x0, y0))
-        logger.info("im shape : %s", i_m.shape)
-        logger.info("point value in mask: %s", i_m[y0, x0])
+        #logger.info("point x0,y0 : %s", (x0, y0))
+        #logger.info("im shape : %s", i_m.shape)
+        #logger.info("point value in mask: %s", i_m[y0, x0])
         point_in_mask = i_m[y0, x0]
         tmp_v = int(point_in_mask[0]) + int(point_in_mask[1]) + int(point_in_mask[2])
         value = int(tmp_v / 3)
@@ -228,7 +229,7 @@ def process_one_frame(data_obj):
             if mean_crop_diff < mean_crop_orig:
                 logger.info("mean_crop_diff: " + str(mean_crop_diff))
                 logger.info("mean_crop_orig: " + str(mean_crop_orig))
-                logger.info("SKIP this frame, filter by bird bug or bat")
+                logger.info("SKIP this rectangle, filter by bird bug or bat")
                 item = {
                     "filter_reason": " bird bug or bat", 
                     "c": "x, y, w, h: " + str((x,y,w,h)), 
