@@ -205,7 +205,7 @@ def process_one_frame(data_obj):
                 continue
             if area > int(512*512*0.5):
                 logger.info("area: " + str(area))
-                logger.info("SKIP this frame, filter by area too big")
+                logger.info("SKIP this rectangle, filter by area too big")
                 item = {
                     "filter_reason": "area too big", 
                     "c": "w, y, w, h: " + str(cv2.boundingRect(c)), 
@@ -229,14 +229,19 @@ def process_one_frame(data_obj):
                 logger.info("SKIP this frame, filter by bird bug or bat")
                 item = {
                     "filter_reason": " bird bug or bat", 
-                    "c": "w, y, w, h: " + str((x,y,w,h)), 
+                    "c": "x, y, w, h: " + str((x,y,w,h)), 
                     "frame_idx": cnt
                 }
                 filter_info_list.append(item)
                 continue
             if is_rectangle_masked(cv2.boundingRect(c), mask_img):
-                logger.info("rectangle in mask, (x,y,w,h): (%d,%d,%d,%d) ", x, y, w, h)
-                pass
+                logger.info("rectangle in mask, (x,y,w,h): [%d,%d,%d,%d] ", x, y, w, h)
+                logger.info("SKIP this rectangle, border hit mask. [%d, %d, %d, %d]", x, y, w, h)
+                item = {
+                    "filter_reason": "border hit mask",
+                    "c": "x, y, w, h: " + str((x, y, w, h))
+                }
+                continue
             cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 2)
             logger.info("find diff, frame index: " + str(cnt) + ' rectangle: ' +  str((x,y,w,h)))
 
