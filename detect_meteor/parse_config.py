@@ -88,11 +88,12 @@ def parse():
 
     cfg['VIDEO_CAP_DIR_MAX_SIZE_BYTES'] = int(config.get("DEFAULT", "VIDEO_CAP_DIR_MAX_SIZE_BYTES"))
 
+    cfg['CAPTURE_VIDEO_FLAG'] = int(config.get("DEFAULT", "CAPTURE_VIDEO_FLAG", fallback="1"))
     cfg['DEVICE_NAME'] = config.get("DEFAULT", "DEVICE_NAME", fallback="")
     
     cfg['ENCODER'] = config.get("DEFAULT", "ENCODER")
 
-    cfg['ALWAY_PROCESS'] = int(config.get("DEFAULT", "ALWAY_PROCESS", fallback="0"))
+    cfg['ALWAYS_PROCESS'] = int(config.get("DEFAULT", "ALWAYS_PROCESS", fallback="0"))
     cfg['RECORD_TIME_ELAPSE_VIDEO'] = int(config.get("DEFAULT", "RECORD_TIME_ELAPSE_VIDEO", fallback="0"))
     cfg['ENABLE_FTP_SERVER'] = int(config.get("DEFAULT", "ENABLE_FTP_SERVER", fallback="0"))
     cfg['FTP_BASE_DIR'] = config.get("DEFAULT", "FTP_BASE_DIR", fallback="")

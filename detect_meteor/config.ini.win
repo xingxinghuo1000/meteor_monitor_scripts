@@ -5,9 +5,10 @@ input_file_type = local
 input_file_base_path = E:\meteor_monitor\origin
 base_output_type = local
 base_output_path = E:\meteor_monitor\meteor_store
-EXECUTOR_NUM = 1
 PYTHON_BIN = .\venv\Scripts\python
 
+# capture video or not, by default, is 1. you can set it to 0 to disable video capture
+CAPTURE_VIDEO_FLAG = 1
 # camera device name. if set to empty, program will use first found device
 # if you have multiple cameras, you can specify which to use
 DEVICE_NAME = ""
@@ -25,4 +26,12 @@ ENCODER = "h264_qsv"
 # setting for ftp server, 0 is for disable, 1 is for enable
 ENABLE_FTP_SERVER = 0
 FTP_BASE_DIR = E:\meteor_monitor
+
+
+# offline process video option
+# if set always process to 1, video will be processed both day and night. by default is 0
+ALWAYS_PROCESS = 0
+# executor to offline process video, by default is 1
+EXECUTOR_NUM = 1
+
 
