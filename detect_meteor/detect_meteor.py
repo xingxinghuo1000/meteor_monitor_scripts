@@ -77,7 +77,7 @@ def process_from_queue(q):
                 if store_lib.input_path_file_exists(full_path + '.lock'):
                     store_lib.delete_input_path_file(full_path + '.lock')
             except:
-                logger.warn(traceback.format_exc())
+                logger.warning(traceback.format_exc())
 
 
 # If process is killed, then lock file will be remained as trash
@@ -96,7 +96,12 @@ def del_old_lock_files(lock_list):
                 else:
                     text = b1.decode("utf-8")
                 logger.info("lock content: " + text)
-                d = json.loads(text)
+                d = {}
+                try:
+                    d = json.loads(text)
+                except:
+                    logger.info("not valid json format, then delete this lock")
+                    store_lib.delete_input_path_file(lock)
                 if 'createTime' in d:
                     lock_t = datetime.datetime.strptime(d['createTime'], "%Y-%m-%d %H:%M:%S")
                     logger.info("lock_t: " + str(lock_t))
@@ -107,8 +112,8 @@ def del_old_lock_files(lock_list):
                     if delta.total_seconds() > 1800:
                         store_lib.delete_input_path_file(lock)
             except:
-                logger.warn("delete old lock file Excepttion:")
-                logger.warn(traceback.format_exc())
+                logger.warning("delete old lock file Excepttion:")
+                logger.warning(traceback.format_exc())
 
 # test case
 def test_del_old_lock():
@@ -204,7 +209,7 @@ def try_lock_file(full_path):
             lock_content = json.dumps(d)
             store_lib.write_file_to_input_path(lockfile, lock_content.encode("utf-8"))
         except:
-            logger.warn(traceback.format_exc())
+            logger.warning(traceback.format_exc())
             return False
         if not store_lib.input_path_file_exists(lockfile):
             # write failed, maybe file path can not be written, return False
@@ -219,7 +224,7 @@ def try_lock_file(full_path):
                     str_read = temp_bytes.decode("utf-8")
                 str_read = str_read.strip("\r\n").strip()
             except:
-                logger.warn(traceback.format_exc())
+                logger.warning(traceback.format_exc())
                 return False
             if cfg['LOCK_STR'] not in str_read:
                 # may be written again be other process or other machine
@@ -292,8 +297,8 @@ def loop_process_video():
             try:
                 batch_process()
             except:
-                logger.warn("Error when batch_process")
-                logger.warn(traceback.format_exc())
+                logger.warning("Error when batch_process")
+                logger.warning(traceback.format_exc())
             logger.info("after process, sleep 30")
             time.sleep(30)
 
@@ -331,8 +336,9 @@ if __name__ == "__main__":
             run_it()
             sys.exit(0)
 
-    # loop process or capture video
-    cap.init_capture()
+    if cfg['CAPTURE_VIDEO_FLAG']:
+        # loop process or capture video
+        cap.init_capture()
 
     t5 = threading.Thread(target=loop_process_video)
     t5.daemon = True
