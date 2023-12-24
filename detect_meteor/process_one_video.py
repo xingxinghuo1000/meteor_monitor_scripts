@@ -97,7 +97,7 @@ def is_rectangle_masked(rect, i_m):
         if x0 >= origin_width:
             x0 = origin_width - 1
         if y0 >= origin_height:
-            y0 = origin_height
+            y0 = origin_height - 1
         # one of the 4 points hit mask
         # 0 means black color
         #logger.info("point x0,y0 : %s", (x0, y0))
