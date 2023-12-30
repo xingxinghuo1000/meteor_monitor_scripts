@@ -7,6 +7,7 @@ import traceback
 import numpy as np
 import util
 import imageio
+import inner_const
 
 import parse_config
 import store_lib
@@ -15,8 +16,6 @@ from logzero import logger
 
 cfg = parse_config.parse()
 
-MIDDLE_WIDTH = 512
-MIDDLE_HEIGHT = 512
 MAX_DIFF_FRAME_CNT = 100
 split_limit = 30
 area_threh = 5
@@ -76,7 +75,7 @@ def mask_img(origin_path, img, w, h):
 
 
 def convert_img(frame):
-    resized = cv2.resize(frame,(MIDDLE_WIDTH, MIDDLE_HEIGHT))
+    resized = cv2.resize(frame,(inner_const.MIDDLE_WIDTH, inner_const.MIDDLE_HEIGHT))
     gray_lwpCV = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
     #cv2.imshow('Frame',gray_lwpCV)
     gray_lwpCV = cv2.GaussianBlur(gray_lwpCV, (5, 5), 0)
@@ -170,7 +169,7 @@ def process_one_frame(data_obj):
             if area < area_threh :
                 #filter_info_list.append(item)
                 continue
-            if area > int(MIDDLE_WIDTH*MIDDLE_HEIGHT*0.5):
+            if area > int(inner_const.MIDDLE_WIDTH*inner_const.MIDDLE_HEIGHT*0.5):
                 logger.info("area: " + str(area))
                 logger.info("SKIP this rectangle, filter by area too big")
                 item = {

@@ -1,6 +1,6 @@
 import cv2
 import os
-
+import inner_const
 
 # one rectagle has four points,
 # if one point in mask_img, return True
@@ -11,7 +11,7 @@ def is_rectangle_masked(rect, i_m, has_mask):
     x, y, w, h = rect
     origin_width = i_m.shape[1]
     origin_height = i_m.shape[0]
-    ZOOM = MIDDLE_WIDTH/origin_width
+    ZOOM = inner_const.MIDDLE_WIDTH/origin_width
     x = int(x/ZOOM)
     y = int(y/ZOOM)
     w = int(w/ZOOM)
