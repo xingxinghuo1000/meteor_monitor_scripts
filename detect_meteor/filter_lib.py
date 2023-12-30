@@ -1,6 +1,7 @@
 import cv2
 import os
 import inner_const
+from logzero import logger
 
 # one rectagle has four points,
 # if one point in mask_img, return True
