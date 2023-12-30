@@ -164,6 +164,7 @@ def process_one_frame(data_obj):
         diff3 = cv2.threshold(diff2,150,255,0)[1]
         #diff4 = cv2.dilate(diff3, es, iterations=2) # 形态学膨胀
         contours, hierarchy = cv2.findContours(diff3, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        rects = []
         for c in contours:
             area = cv2.contourArea(c)
             if area < area_threh :
@@ -212,12 +213,13 @@ def process_one_frame(data_obj):
             logger.info("find diff, frame index: " + str(cnt) + ' rectangle: ' +  str((x,y,w,h)))
 
             match = 1
-            match_rec = (x,y,w,h)
+            match_rec = [x,y,w,h]
+            rects.append(match_rec)
         if match == 1:
             if cfg['DEBUG']:
                 key = cv2.waitKey(200)
             data_obj['index'].append(cnt)
-            data_obj['index_with_rec'].append({"index": cnt, "rec": match_rec})
+            data_obj['index_with_rec'].append({"index": cnt, "rects": rects})
             # save diff frame for debug
             if len(data_obj['diff_frames_by_index']) < MAX_DIFF_FRAME_CNT:
                 tmp_jpg = store_lib.gen_local_temp_file() + ".jpg"
@@ -258,14 +260,11 @@ def read_one_video(local_video_path, origin_path):
     logger.info('Frame count : ' + str(frame_count))
     time_sec = frame_count / fps
     logger.info("time total seconds: " + str(time_sec))
-    index = []
-    index_with_rec = []
-    diff_frames_by_index = {}
     data_obj = {
         "frame_idx": 0,
-        "index": index,
-        "index_with_rec": index_with_rec,
-        "diff_frames_by_index": diff_frames_by_index,
+        "index": [],
+        "index_with_rec": [],
+        "diff_frames_by_index": {},
         "width": width,
         "height": height,
         "frame_count": frame_count,
@@ -293,7 +292,7 @@ def read_one_video(local_video_path, origin_path):
     if 'elapse_60x' in data_obj:
         data_obj['elapse_60x'].release()
         convert_avi_to_264(data_obj['elapse_60x_fn'])
-    logger.info("index: " + str(index))
+    logger.info("index: " + str(data_obj['index']))
     logger.info("filter_info_list: " + str(data_obj['filter_info_list']))
     return data_obj
 
@@ -626,6 +625,7 @@ def process_one_video(full_path):
     d = {}
     d["IP"] = cfg['IP_ADDR']
     d["index"] = index
+    logger.info("index with rec: %s", ret['index_with_rec'])
     d["index_with_rec"] = ret['index_with_rec']
     if 'filter_segments' in ret:
         d['filter_segments'] = ret['filter_segments']
