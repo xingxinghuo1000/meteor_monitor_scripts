@@ -58,15 +58,19 @@ def mask_img(origin_path, img, w, h):
             has_mask = 1
             logger.info("load mask file done")
             util.safe_os_remove(tmp_bmp_file)
-            if w != 1280:
+            if w != 1280 or h != 720:
                 img_mask = cv2.resize(img_mask, (w,h))
+                if cfg['DEBUG']:
+                    cv2.imwrite(mask_file1 + ".resized.jpg", img_mask, [int(cv2.IMWRITE_JPEG_QUALITY),100])
         else: 
             if os.path.exists(mask_file2):
                 logger.info("find image mask file2, path: " + mask_file2)
                 img_mask = cv2.imread(mask_file2)
                 has_mask = 1
-                if w != 1280:
+                if w != 1280 or h != 720:
                     img_mask = cv2.resize(img_mask, (w,h))
+                    if cfg['DEBUG']:
+                        cv2.imwrite(mask_file2 + ".resized.jpg", img_mask, [int(cv2.IMWRITE_JPEG_QUALITY),100])
         has_load_img_mask = 1
     if has_mask == 1:
         ret_img = cv2.bitwise_and(img, img_mask)
