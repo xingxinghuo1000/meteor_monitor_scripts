@@ -3,7 +3,7 @@ import os
 import inner_const
 from logzero import logger
 
-# one rectagle has four points,
+# one rectangle has four points,
 # if one point in mask_img, return True
 # if none of the point in mask_img, return False
 def is_rectangle_masked(rect, i_m, has_mask):
@@ -12,15 +12,18 @@ def is_rectangle_masked(rect, i_m, has_mask):
     x, y, w, h = rect
     origin_width = i_m.shape[1]
     origin_height = i_m.shape[0]
-    ZOOM = inner_const.MIDDLE_WIDTH/origin_width
-    x = int(x/ZOOM)
-    y = int(y/ZOOM)
-    w = int(w/ZOOM)
-    h = int(w/ZOOM)
+    #logger.info("origin_w: %d, origi_h: %d", origin_width, origin_height)
+    ZOOM_X = inner_const.MIDDLE_WIDTH/origin_width
+    ZOOM_Y = inner_const.MIDDLE_HEIGHT/origin_height
+    x = int(x/ZOOM_X)
+    y = int(y/ZOOM_Y)
+    w = int(w/ZOOM_X)
+    h = int(w/ZOOM_Y)
     p1 = x, y
     p2 = x + w, y
     p3 = x, y + h
     p4 = x + w, y + h
+    #logger.info("after zoom, rect: [%d, %d, %d, %d], zoom_x:%.2f, zoom_y:%.2f", x,y,w,h, ZOOM_X, ZOOM_Y)
     for p in [p1, p2, p3, p4]:
         x0, y0 = p1
         if x0 >= origin_width:

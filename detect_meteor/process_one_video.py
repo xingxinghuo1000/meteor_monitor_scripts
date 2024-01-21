@@ -12,6 +12,7 @@ import inner_const
 import parse_config
 import store_lib
 import filter_lib
+import line_detect_lib
 from logzero import logger
 
 cfg = parse_config.parse()
@@ -132,8 +133,6 @@ def process_one_frame(data_obj):
             data_obj["last_cnt"] = cnt
             data_obj['t1'] = t2
         logger.info("frame count: {0}  total: {1}".format(cnt, frame_count))
-    match = 0
-    match_rec = None
     
     m_img = mask_img(origin_path, frame, width, height)
     #cv2.imshow("masked_image", m_img)
@@ -167,12 +166,14 @@ def process_one_frame(data_obj):
         rects = []
         for c in contours:
             area = cv2.contourArea(c)
+            (x, y, w, h) = cv2.boundingRect(c)
             if area < area_threh :
                 #filter_info_list.append(item)
                 continue
             if area > int(inner_const.MIDDLE_WIDTH*inner_const.MIDDLE_HEIGHT*0.5):
                 logger.info("area: " + str(area))
                 logger.info("SKIP this rectangle, filter by area too big")
+                cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 255), 2)
                 item = {
                     "filter_reason": "area too big", 
                     "c": "w, y, w, h: " + str(cv2.boundingRect(c)), 
@@ -180,11 +181,6 @@ def process_one_frame(data_obj):
                 }
                 filter_info_list.append(item)
                 continue
-            (x, y, w, h) = cv2.boundingRect(c)
-            #x -= 2
-            #y -= 2
-            #w += 2
-            #h += 2
             crop_diff = gray_lwpCV[y:y+h, x:x+w]
             crop_orig = background[y:y+h, x:x+w]
             mean_crop_diff = cv2.mean(crop_diff)[0]
@@ -194,6 +190,7 @@ def process_one_frame(data_obj):
                 logger.info("mean_crop_diff: " + str(mean_crop_diff))
                 logger.info("mean_crop_orig: " + str(mean_crop_orig))
                 logger.info("SKIP this rectangle, filter by bird bug or bat")
+                cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 255), 2)
                 item = {
                     "filter_reason": " bird bug or bat", 
                     "c": "x, y, w, h: " + str((x,y,w,h)), 
@@ -201,35 +198,48 @@ def process_one_frame(data_obj):
                 }
                 filter_info_list.append(item)
                 continue
-            if filter_lib.is_rectangle_masked(cv2.boundingRect(c), img_mask, has_mask):
+            if filter_lib.is_rectangle_masked([x,y,w,h], img_mask, has_mask):
                 logger.info("rectangle in mask, (x,y,w,h): [%d,%d,%d,%d] ", x, y, w, h)
                 logger.info("SKIP this rectangle, border hit mask. [%d, %d, %d, %d]", x, y, w, h)
+                cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 255), 2)
                 item = {
                     "filter_reason": "border hit mask",
                     "c": "x, y, w, h: " + str((x, y, w, h))
                 }
                 continue
+            # draw rectangle to canvas
             cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 2)
             logger.info("find diff, frame index: " + str(cnt) + ' rectangle: ' +  str((x,y,w,h)))
+            # match this rectangle, record to temp variable
+            rects.append([x,y,w,h])
 
-            match = 1
-            match_rec = [x,y,w,h]
-            rects.append(match_rec)
-        if match == 1:
-            if cfg['DEBUG']:
-                key = cv2.waitKey(200)
-            data_obj['index'].append(cnt)
-            data_obj['index_with_rec'].append({"index": cnt, "rects": rects})
-            # save diff frame for debug
-            if len(data_obj['diff_frames_by_index']) < MAX_DIFF_FRAME_CNT:
-                tmp_jpg = store_lib.gen_local_temp_file() + ".jpg"
-                cv2.imwrite(tmp_jpg, resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
-                gif_frame = imageio.imread(tmp_jpg)
-                data_obj['diff_frames_by_index'][str(cnt)] = gif_frame
-                logger.info("save diff frame, current total frame num: {0}, cur idx:{1}".format(
-                        len(data_obj['diff_frames_by_index']), 
-                        cnt))
-                util.safe_os_remove(tmp_jpg)
+        if len(rects) > 0:
+            # detect too big area, by multiple rectangles.
+            if line_detect_lib.is_object_too_big(rects):
+                logger.info("SKIP this frame, reason, object is too big. rects: %s", rects)
+                for rect in rects:
+                    x, y, w, h = rect
+                    cv2.rectangle(resized_frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 255), 2)
+                filter_info_list.append({
+                    "filter_reason": "object is too big.",
+                    "frame_idx": cnt,
+                })
+            else:
+                # matched at least one rectangle
+                if cfg['DEBUG']:
+                    key = cv2.waitKey(200)
+                data_obj['index'].append(cnt)
+                data_obj['index_with_rec'].append({"index": cnt, "rects": rects})
+                # save diff frame for debug
+                if len(data_obj['diff_frames_by_index']) < MAX_DIFF_FRAME_CNT:
+                    tmp_jpg = store_lib.gen_local_temp_file() + ".jpg"
+                    cv2.imwrite(tmp_jpg, resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY),100])
+                    gif_frame = imageio.imread(tmp_jpg)
+                    data_obj['diff_frames_by_index'][str(cnt)] = gif_frame
+                    logger.info("save diff frame, current total frame num: {0}, cur idx:{1}".format(
+                            len(data_obj['diff_frames_by_index']), 
+                            cnt))
+                    util.safe_os_remove(tmp_jpg)
     if cfg['DEBUG']:
         cv2.imshow("frame: ", resized_frame)
     if cfg['DEBUG']:
@@ -294,6 +304,7 @@ def read_one_video(local_video_path, origin_path):
         convert_avi_to_264(data_obj['elapse_60x_fn'])
     logger.info("index: " + str(data_obj['index']))
     logger.info("filter_info_list: " + str(data_obj['filter_info_list']))
+    logger.info("index with rec: %s", data_obj['index_with_rec'])
     return data_obj
 
 
@@ -409,7 +420,15 @@ def ffmpg_split(start_time, end_time, segment, input_file, diff_frames_by_index)
 
 def get_record_time_from_video_name(full_path, shift_time):
     basename = os.path.basename(full_path)
-    t = datetime.datetime.strptime(basename, "WIN_%Y%m%d_%H_%M_%S_Pro.mp4")
+    if 'WIN_' in basename:
+        basename = basename.split('WIN_')[1]
+    if '_Pro' in basename:
+        basename = basename.split('_Pro')[0]
+    if '_DESC' in basename:
+        basename = basename.split('_DESC')[0]
+    if '_' in basename:
+        basename = basename.replace('_', '')
+    t = datetime.datetime.strptime(basename, "%Y%m%d%H%M%S")
     shift_hour = shift_time.split(":")[0]
     shift_min = shift_time.split(":")[1]
     shift_sec = shift_time.split(":")[2]
@@ -625,7 +644,6 @@ def process_one_video(full_path):
     d = {}
     d["IP"] = cfg['IP_ADDR']
     d["index"] = index
-    logger.info("index with rec: %s", ret['index_with_rec'])
     d["index_with_rec"] = ret['index_with_rec']
     if 'filter_segments' in ret:
         d['filter_segments'] = ret['filter_segments']
