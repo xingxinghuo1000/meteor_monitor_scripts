@@ -101,6 +101,8 @@ def parse():
     if cfg['ENABLE_FTP_SERVER']:
         assert cfg['FTP_BASE_DIR'] != ""
 
+    cfg['SERVER_PORT'] = int(config.get("DEFAULT", "SERVER_PORT", fallback="8090"))
+
     logger.info("after parse config, cfg: %s", json.dumps(cfg, indent=2, ensure_ascii=False))
     return cfg
 

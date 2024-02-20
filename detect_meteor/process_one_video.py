@@ -686,9 +686,16 @@ def test_write_analyze_file():
 
 
 if __name__ == "__main__":
-    video_file = sys.argv[1]
-    assert os.path.exists(video_file)
-    process_one_video(video_file)
+    full_path = sys.argv[1]
+
+    if '--debug' in sys.argv:
+        cfg['DEBUG'] = 1
+
+    if full_path.startswith('"'):
+                full_path = full_path.strip('"')
+    store_lib.input_path_file_exists(full_path)
+    logger.info("full_path: "+full_path)
+    process_one_video(full_path)
 
 
 

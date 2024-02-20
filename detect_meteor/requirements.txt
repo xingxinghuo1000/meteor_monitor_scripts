@@ -6,3 +6,5 @@ logzero
 suntime
 pytest
 configparser
+flask
+requests

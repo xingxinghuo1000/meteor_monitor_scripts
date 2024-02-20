@@ -8,10 +8,7 @@ from logzero import logger
 import flask
 from flask import Flask, render_template, request
 import requests
-import traceback
 import threading
-import uuid
-import socket
 import json
 import util
 import parse_config
@@ -43,23 +40,11 @@ def register():
 if __name__ == "__main__":
     assert True == cap.check_ffmpeg()
     #assert True == util.check_python_bin()
-    util.clean_temp_dir()
-    if '--debug' in sys.argv:
-        cfg['DEBUG'] = 1
-    '''
-    for arg in sys.argv:
-        if '--video-file=' in arg:
-            arg = arg.replace("--video-file=", "--video_file=")
-        if '--video_file=' in arg:
-            logger.info("process single video file")
-            full_path = arg.split("--video_file=")[1]
-            if full_path.startswith('"'):
-                full_path = full_path.strip('"')
-            store_lib.input_path_file_exists(full_path)
-            logger.info("full_path: "+full_path)
-            pov.process_one_video(full_path)
-            sys.exit(0)
-    '''
+
+    t2 = threading.Thread(target=util.loop_clean_temp_dir)
+    t2.daemon = True
+    t2.start()
+
 
     if cfg['CAPTURE_VIDEO_FLAG']:
         # loop process or capture video
@@ -76,10 +61,10 @@ if __name__ == "__main__":
         t6.daemon = True
         t6.start()
 
-    t7 = theading.Thread(target = cap.cap_loop)
+    t7 = threading.Thread(target = cap.cap_loop)
     t7.daemon = True
     t7.start()
 
 
-    app.run()
+    app.run(port=cfg['SERVER_PORT'])
 

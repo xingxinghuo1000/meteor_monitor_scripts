@@ -1,8 +1,13 @@
 import queue
 import threading
+import traceback
+import parse_config
 import os
+import time
 from logzero import logger
 import store_lib
+import util
+import mylock
 
 queue_obj = queue.Queue()
 cfg = parse_config.parse()
@@ -34,7 +39,7 @@ def batch_process():
     orig_list = store_lib.list_input_path(cfg['input_file_base_path'])
     lock_list = [os.path.join(cfg['input_file_base_path'], x) for x in orig_list if x.endswith(".lock")]
     logger.info("lock_list: " + str(lock_list))
-    del_old_lock_files(lock_list)
+    mylock.del_old_lock_files(lock_list)
     video_list = [x for x in orig_list if x.endswith(".mp4") and '60x' not in x and '120x' not in x]
     if len(video_list) == 0:
         logger.info("video list is empty, then return")
@@ -86,7 +91,7 @@ def process_from_queue(q):
             if store_lib.input_path_file_exists(full_path + '.analyze'):
                 logger.info("analyze file already exists, then return, full_path: " + full_path)
                 continue
-            lock_flag = try_lock_file(full_path)
+            lock_flag = mylock.try_lock_file(full_path)
             if lock_flag == False:
                 logger.info("lock file failed, then return, full_path: " + full_path)
                 continue

@@ -6,7 +6,9 @@ import datetime
 import traceback
 from suntime import Sun, SunTimeException
 from logzero import logger
+import parse_config
 
+cfg = parse_config.parse()
 
 def safe_os_remove(full_path):
     if os.path.exists(full_path):
@@ -87,6 +89,12 @@ def test_is_night():
     assert True == is_night("20:01", "05:00", "20:00")
     assert True == is_night("22:01", "05:00", "20:00")
     assert True == is_night("23:59", "05:00", "20:00")
+
+def loop_clean_temp_dir():
+    while 1:
+        time.sleep(1)
+        clean_temp_dir()
+        time.sleep(600)
 
 
 def clean_temp_dir():

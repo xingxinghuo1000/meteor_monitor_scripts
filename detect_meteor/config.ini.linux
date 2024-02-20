@@ -26,3 +26,5 @@ ENCODER = mjpeg
 ENABLE_FTP_SERVER = 0
 FTP_BASE_DIR = /root/xudong/meteor_monitor/
 
+# main server listen port 
+SERVER_PORT = 8090
