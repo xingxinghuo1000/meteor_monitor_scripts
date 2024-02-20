@@ -1,5 +1,6 @@
 import cv2
 import os
+import sys
 import time
 import datetime
 import json
@@ -681,4 +682,13 @@ def test_write_analyze_file():
     with open("1.mp4.analyze") as f1:
         text = f1.read()
     store_lib.delete_input_path_file("1.mp4.analyze")
+
+
+
+if __name__ == "__main__":
+    video_file = sys.argv[1]
+    assert os.path.exists(video_file)
+    process_one_video(video_file)
+
+
 
