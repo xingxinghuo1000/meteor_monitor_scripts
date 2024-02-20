@@ -222,6 +222,23 @@ def test_check_ffmpeg():
 
 
 
+
+def cap_loop():
+    while 1:
+        time.sleep(5)
+        if cfg['CAPTURE_VIDEO_FLAG']:
+            if util.should_process_now() == False:
+                logger.info("is night, should capture video")
+                if True == cap.is_hit_sum_size_limit():
+                    cap.delete_old_video()
+                cap.record_one_video_file()
+                time.sleep(1)
+        else:
+            logger.info("capture video flag set to 0, then skip")
+            time.sleep(1)
+
+
+
 if __name__ == "__main__":
     init_capture()
     show_video_format_support()

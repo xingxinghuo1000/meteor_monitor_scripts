@@ -1,6 +1,7 @@
 import os
 import traceback
 import socket
+import time
 import datetime
 import traceback
 from suntime import Sun, SunTimeException
@@ -88,6 +89,48 @@ def test_is_night():
     assert True == is_night("23:59", "05:00", "20:00")
 
 
+def clean_temp_dir():
+    cur_time = time.time()
+    if os.path.exists("temp"):
+        logger.info("try to clean temp dir")
+        for f in os.listdir("temp"):
+            ff = os.path.join("temp", f)
+            t = os.path.getmtime(ff)
+            diff = int(cur_time - t)
+            logger.info("(current time) - (temp time create time) = " + str(diff))
+            if diff > 7200:
+                logger.info("try to remove temp file: "+f)
+                safe_os_remove(ff)
+
+
+def should_process_now():
+    n = datetime.datetime.now()
+    n_str = n.strftime("%H:%M")
+    delta2h = datetime.timedelta(hours=2)
+    sr_utc, ss_utc, sr_local, ss_local = get_sun_time(float(cfg["LATITUDE"]), 
+            float(cfg['LONGITUDE']))
+    black_time_sr = sr_local - delta2h
+    black_time_ss = ss_local + delta2h
+    a = black_time_sr.strftime("%H:%M")
+    b = black_time_ss.strftime("%H:%M")
+    logger.info("now: " + n_str)
+    logger.info("a: " + a + "     b: " + b)
+    is_ni = is_night(n_str, a, b)
+    logger.info("is_night: %d", is_ni)
+    if is_ni:
+        return False
+    else:
+        # is in daylight
+        return True
+    
+
+def check_python_bin():
+    assert cfg['PYTHON_BIN'] != ''
+    bin_cmd = cfg['PYTHON_BIN']
+    cmd = '%s --version' %(bin_cmd)
+    ret = os.popen(cmd).read()
+    assert 'Python 3' in ret
+    return True
 
 
 

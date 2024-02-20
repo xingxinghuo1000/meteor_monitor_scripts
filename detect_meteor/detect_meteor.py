@@ -5,6 +5,9 @@ import time
 import datetime
 import logzero
 from logzero import logger
+import flask
+from flask import Flask, render_template, request
+import requests
 import traceback
 import threading
 import queue
@@ -30,20 +33,15 @@ cfg = parse_config.parse()
 queue_obj = queue.Queue()
 
 
+app = Flask(__name__)
+
+
+
+@app.route('/index', methods=['GET'])
+def register():
+    return render_template('index.html')
 
     
-
-
-def run_it():
-    #read_one_video("1.mp4")
-    #pov.process_one_video(os.path.join("test-T", "WIN_20220507_03_23_22_Pro.mp4"))
-    #pov.process_one_video(os.path.join("test-F", "WIN_20220518_03_26_44_Pro.mp4"))
-    #pov.process_one_video(os.path.join("test-F", "WIN_20220518_04_10_47_Pro.mp4"))
-    pov.process_one_video(os.path.join("test-F", "WIN_20220518_02_35_56_Pro.mp4"))
-    #read_one_video("meteor-20211228.mp4")
-    #read_one_video("meteor-20211229.mp4")
-    #read_one_video("meteor-20211231.mp4")
-
 
 def process_from_queue(q):
     while 1:
@@ -78,57 +76,6 @@ def process_from_queue(q):
                     store_lib.delete_input_path_file(full_path + '.lock')
             except:
                 logger.warning(traceback.format_exc())
-
-
-# If process is killed, then lock file will be remained as trash
-# If the old lock is not deleted, then this video file will never be processed in the future
-# So in every loop, 
-# we will check lock file is too old, >= 3600 seconds, if True, then delete it
-def del_old_lock_files(lock_list):
-    # read lock content
-    for lock in lock_list:
-        if store_lib.input_path_file_exists(lock):
-            try:
-                b1 = store_lib.read_file_from_input_path(lock)
-                logger.info("b1: " + str([b1]))
-                if type(b1) == type("abc"):
-                    text = b1
-                else:
-                    text = b1.decode("utf-8")
-                logger.info("lock content: " + text)
-                d = {}
-                try:
-                    d = json.loads(text)
-                except:
-                    logger.info("not valid json format, then delete this lock")
-                    store_lib.delete_input_path_file(lock)
-                if 'createTime' in d:
-                    lock_t = datetime.datetime.strptime(d['createTime'], "%Y-%m-%d %H:%M:%S")
-                    logger.info("lock_t: " + str(lock_t))
-                    n = datetime.datetime.now()
-                    logger.info("now: " + str(n))
-                    delta = n - lock_t
-                    logger.info("delta.total_seconds: " + str(delta.total_seconds()))
-                    if delta.total_seconds() > 1800:
-                        store_lib.delete_input_path_file(lock)
-            except:
-                logger.warning("delete old lock file Excepttion:")
-                logger.warning(traceback.format_exc())
-
-# test case
-def test_del_old_lock():
-    lock_file_1_full = os.path.join(cfg['input_file_base_path'], 'test1.mp4.lock')
-    lock_file_2_full = os.path.join(cfg['input_file_base_path'], 'test2.mp4.lock')
-    lock_content1 = '{"createTime": "2022-07-27 21:00:00"}'
-    store_lib.write_file_to_input_path(lock_file_1_full, lock_content1.encode("utf-8"))
-    assert True == store_lib.input_path_file_exists(lock_file_1_full)
-    lock_content2 = '{"createTime": "' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '"}'
-    store_lib.write_file_to_input_path(lock_file_2_full, lock_content2.encode("utf-8"))
-    time.sleep(1)
-    del_old_lock_files([lock_file_1_full, lock_file_2_full])
-    assert False == store_lib.input_path_file_exists(lock_file_1_full)
-    assert True  == store_lib.input_path_file_exists(lock_file_2_full)
-    store_lib.delete_input_path_file(lock_file_2_full)
 
 
 def filter_by_done_file(video_list, orig_list):
@@ -193,100 +140,12 @@ def batch_process():
     logger.info("all thread exited")
                                     
 
-def try_lock_file(full_path):
-    assert cfg['LOCK_STR'] != ''
-    assert cfg['IP_ADDR'] != ''
-    lockfile = full_path + ".lock"
-    if store_lib.input_path_file_exists(lockfile):
-        return False
-    else:
-        try:
-            d = {
-                "createTime": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
-                "IP": cfg['IP_ADDR'],
-                "LOCK_STR": cfg['LOCK_STR']
-            }
-            lock_content = json.dumps(d)
-            store_lib.write_file_to_input_path(lockfile, lock_content.encode("utf-8"))
-        except:
-            logger.warning(traceback.format_exc())
-            return False
-        if not store_lib.input_path_file_exists(lockfile):
-            # write failed, maybe file path can not be written, return False
-            return False
-        else:
-            str_read = ""
-            try:
-                temp_bytes = store_lib.read_file_from_input_path(lockfile)
-                if type(temp_bytes) == type("abc"):
-                    str_read = temp_bytes
-                else:
-                    str_read = temp_bytes.decode("utf-8")
-                str_read = str_read.strip("\r\n").strip()
-            except:
-                logger.warning(traceback.format_exc())
-                return False
-            if cfg['LOCK_STR'] not in str_read:
-                # may be written again be other process or other machine
-                return False
-            else:
-                # !!!!!! SUCCESS lock this file
-                return True
 
-def test_lock():
-    # test 1
-    if store_lib.input_path_file_exists("1.txt.lock"):
-        store_lib.delete_input_path_file('1.txt.lock')
-    full_path = "1.txt"
-    assert True == try_lock_file("1.txt")
-    if store_lib.input_path_file_exists("1.txt.lock"):
-        store_lib.delete_input_path_file("1.txt.lock")
-    # test 2
-    if store_lib.input_path_file_exists("2.txt.lock"):
-        store_lib.delete_input_path_file('2.txt.lock')
-    store_lib.write_file_to_input_path("2.txt.lock", b'1123123')
-    assert False == try_lock_file("2.txt")
-    if store_lib.input_path_file_exists("2.txt.lock"):
-        store_lib.delete_input_path_file("2.txt.lock")
-
-
-def should_process_now():
-    n = datetime.datetime.now()
-    n_str = n.strftime("%H:%M")
-    delta2h = datetime.timedelta(hours=2)
-    sr_utc, ss_utc, sr_local, ss_local = util.get_sun_time(float(cfg["LATITUDE"]), 
-            float(cfg['LONGITUDE']))
-    black_time_sr = sr_local - delta2h
-    black_time_ss = ss_local + delta2h
-    a = black_time_sr.strftime("%H:%M")
-    b = black_time_ss.strftime("%H:%M")
-    logger.info("now: " + n_str)
-    logger.info("a: " + a + "     b: " + b)
-    is_ni = util.is_night(n_str, a, b)
-    logger.info("is_night: %d", is_ni)
-    if is_ni:
-        return False
-    else:
-        # is in daylight
-        return True
-    
-def clean_temp_dir():
-    cur_time = time.time()
-    if os.path.exists("temp"):
-        logger.info("try to clean temp dir")
-        for f in os.listdir("temp"):
-            ff = os.path.join("temp", f)
-            t = os.path.getmtime(ff)
-            diff = int(cur_time - t)
-            logger.info("(current time) - (temp time create time) = " + str(diff))
-            if diff > 7200:
-                logger.info("try to remove temp file: "+f)
-                util.safe_os_remove(ff)
 
 def loop_process_video():
     while 1:
         time.sleep(10)
-        flag1 = should_process_now()
+        flag1 = util.should_process_now()
         flag2 = int(cfg['ALWAYS_PROCESS']) == 1
         logger.info("flag1: %d, flag2: %d", flag1, flag2)
         if flag1 or flag2:
@@ -303,20 +162,11 @@ def loop_process_video():
             time.sleep(30)
 
 
-def check_python_bin():
-    assert cfg['PYTHON_BIN'] != ''
-    bin = cfg['PYTHON_BIN']
-    cmd = '%s --version' %(bin)
-    ret = os.popen(cmd).read()
-    assert 'Python 3' in ret
-    return True
-
-
 
 if __name__ == "__main__":
     assert True == cap.check_ffmpeg()
-    assert True == check_python_bin()
-    clean_temp_dir()
+    #assert True == util.check_python_bin()
+    util.clean_temp_dir()
     if '--debug' in sys.argv:
         cfg['DEBUG'] = 1
     for arg in sys.argv:
@@ -330,10 +180,6 @@ if __name__ == "__main__":
             store_lib.input_path_file_exists(full_path)
             logger.info("full_path: "+full_path)
             pov.process_one_video(full_path)
-            sys.exit(0)
-        if '--run_it' in arg:
-            cfg['DEBUG'] = 1
-            run_it()
             sys.exit(0)
 
     if cfg['CAPTURE_VIDEO_FLAG']:
@@ -351,16 +197,10 @@ if __name__ == "__main__":
         t6.daemon = True
         t6.start()
 
-    while 1:
-        time.sleep(5)
-        if cfg['CAPTURE_VIDEO_FLAG']:
-            if should_process_now() == False:
-                logger.info("is night, should capture video")
-                if True == cap.is_hit_sum_size_limit():
-                    cap.delete_old_video()
-                cap.record_one_video_file()
-                time.sleep(1)
-        else:
-            logger.info("capture video flag set to 0, then skip")
-            time.sleep(1)
+    t7 = theading.Thread(target = cap.cap_loop)
+    t7.daemon = True
+    t7.start()
+
+
+    app.run()
 
