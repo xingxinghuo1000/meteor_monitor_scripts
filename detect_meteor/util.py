@@ -111,6 +111,29 @@ def clean_temp_dir():
                 safe_os_remove(ff)
 
 
+
+def is_now_at_night():
+    n = datetime.datetime.now()
+    n_str = n.strftime("%H:%M")
+    delta2h = datetime.timedelta(hours=2)
+    sr_utc, ss_utc, sr_local, ss_local = get_sun_time(float(cfg["LATITUDE"]), 
+            float(cfg['LONGITUDE']))
+    black_time_sr = sr_local - delta2h
+    black_time_ss = ss_local + delta2h
+    a = black_time_sr.strftime("%H:%M")
+    b = black_time_ss.strftime("%H:%M")
+    logger.info("now: " + n_str)
+    logger.info("a: " + a + "     b: " + b)
+    is_ni = is_night(n_str, a, b)
+    logger.info("is_night: %d", is_ni)
+    if is_ni:
+        return True
+    else:
+        # is in daylight
+        return False
+    
+
+
 def should_process_now():
     n = datetime.datetime.now()
     n_str = n.strftime("%H:%M")

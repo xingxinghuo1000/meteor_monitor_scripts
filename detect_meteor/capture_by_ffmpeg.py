@@ -45,7 +45,7 @@ def init_capture():
     if cfg['DEVICE_NAME'] != None and cfg['DEVICE_NAME'] != '':
         device_name = cfg['DEVICE_NAME']
     logger.info("use video device: %s", device_name)
-    show_video_format_support()
+    show_video_format_support(device_name)
 
 def check_ffmpeg():
     text = os.popen("ffmpeg --help 2>&1").read()
@@ -113,24 +113,56 @@ def delete_old_video():
             util.safe_os_remove(log_file)
 
 
-def show_video_format_support():
-    assert device_name != None
+def get_video_format_support(device_name):
+
+    def get_format_obj(line):
+        cols = line.split()
+        obj = {}
+        assert "vcodec=" in cols[-7] or "pixel_format=" in cols[-7]
+        #logger.info("codec: %s", cols[-7])
+        obj["codec"] = cols[-7].split("=")[1]
+        #logger.info("resolution: %s", cols[-2])
+        assert "s=" in cols[-2]
+        obj["resolution"] = cols[-2].split("=")[1]
+        obj["width"] = int(obj["resolution"].split("x")[0])
+        obj["height"] = int(obj["resolution"].split("x")[1])
+        obj["resolutionTotal"] = obj["width"] * obj["height"]
+        del obj["resolution"]
+        #logger.info("fps:  %s", cols[-1])
+        assert "fps=" in cols[-1]
+        obj["fps"] = cols[-1].split("=")[1]
+        return obj
+
+    uniq_dict = {}
+    out = []
+
     if 'Windows' in platform_str:
-        po = os.popen('ffmpeg -list_options true -f dshow -i video="{0}" 2>&1'.format(device_name))
+        po = os.popen('ffmpeg -list_options true -hide_banner  -f dshow -i video="{0}" 2>&1'.format(device_name))
         ret = po.buffer.read().decode("utf-8")
-        logger.info("show device format: %s", ret)
+        #logger.info("show device format: %s", ret)
         for line in ret.split("\n"):
-            if 'fps=' in line:
-                logger.info("support format: " + line)
+            if 'fps=' in line and ('vcodec=' in line or ' pixel_format=' in line):
+                #logger.info("support format: " + line)
+                obj = get_format_obj(line)
+                key = str(obj["width"]) + ":" + str(obj["height"]) + ":" + obj["fps"]
+                if key not in uniq_dict:
+                    out.append(obj)
+                    #logger.info("format obj: %s", obj)
+                    uniq_dict[key] = 1
+
     if 'Linux' in platform_str:
         ret = os.popen(' ffmpeg -hide_banner -f v4l2 -list_formats all -i {0}').format(device_name).read()
         logger.info("show device format: %s", ret)
 
+    return {
+        "device_name": device_name, 
+        "format_list": out
+    }
 
 
 def get_device_list():
     if 'Windows' in platform_str:
-        po = os.popen("ffmpeg -list_devices true -f dshow -i dummy 2>&1")
+        po = os.popen("ffmpeg -list_devices true -hide_banner -f dshow -i dummy 2>&1")
         ret = po.buffer.read().decode('utf-8')
         #logger.info("ffmpeg ret: " + ret)
         li = []
@@ -225,23 +257,25 @@ def test_check_ffmpeg():
 
 def cap_loop():
     while 1:
-        time.sleep(5)
+        time.sleep(0.1)
         if cfg['CAPTURE_VIDEO_FLAG']:
-            if util.should_process_now() == False:
+            if util.is_now_at_night() == True:
                 logger.info("is night, should capture video")
                 if True == cap.is_hit_sum_size_limit():
                     cap.delete_old_video()
                 cap.record_one_video_file()
                 time.sleep(1)
+            else:
+                time.sleep(60)
         else:
             logger.info("capture video flag set to 0, then skip")
-            time.sleep(1)
+            time.sleep(60)
 
 
 
 if __name__ == "__main__":
     init_capture()
-    show_video_format_support()
+    get_video_format_support()
     get_device_list()
     get_support_encoders()
     get_file_name_by_current_time()
